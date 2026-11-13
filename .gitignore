@@ -1,0 +1,26 @@
+node_modules/
+dist/
+
+# Environment files and API credentials must never be committed
+.env*
+.vercel/
+.secrets/
+secrets/
+*.secret
+*.secrets
+*.pem
+*.key
+*.p12
+*.pfx
+*service-account*.json
+*credentials*.json
+
+supabase/.temp/
+*.log
+.DS_Store
+
+# Local agent/runtime links and shell helpers
+.claude/
+agent/
+powershell.bat
+

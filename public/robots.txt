@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /discover
+Allow: /categories
+Allow: /brand/
+Allow: /product/
+Allow: /post/
+Allow: /feed
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /guidelines
+
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /verify-email
+Disallow: /set-password
+Disallow: /auth/
+
+Sitemap: https://brandscope.network/sitemap.xml
