@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Bell, Check, CheckCheck, UserPlus, Heart, MessageSquare } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { NotificationPermissionButton } from '../../components/common/NotificationPermissionButton';
 
 export const NotificationsPage = () => {
   const { user } = useAuth();
@@ -12,6 +13,10 @@ export const NotificationsPage = () => {
   const [notifications, setNotifications] = useState(
     user ? dataStore.getNotifications(user.uid) : []
   );
+
+  useEffect(() => dataStore.subscribe(() => {
+    setNotifications(user ? dataStore.getNotifications(user.uid) : []);
+  }), [user]);
 
   const handleMarkAsRead = async (id) => {
     await dataStore.markNotificationAsRead(id);
@@ -52,17 +57,15 @@ export const NotificationsPage = () => {
           </p>
         </div>
 
-        {notifications.some((n) => !n.read) && (
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            className="btn btn-outline btn-sm"
-            style={{ gap: '6px' }}
-          >
-            <CheckCheck size={15} />
-            <span>Mark All as Read</span>
-          </button>
-        )}
+        <div className="notification-page-actions">
+          <NotificationPermissionButton />
+          {notifications.some((n) => !n.read) && (
+            <button type="button" onClick={handleMarkAllRead} className="btn btn-outline btn-sm" style={{ gap: '6px' }}>
+              <CheckCheck size={15} />
+              <span>Mark All as Read</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (

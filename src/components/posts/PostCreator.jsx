@@ -91,10 +91,11 @@ export const PostCreator = ({ onPostCreated }) => {
             {showImageInput && (
               <div style={{ marginTop: 'var(--space-3)' }}>
                 <ImageUploader
-                  label="Attach Photo from Phone or Computer"
-                  hint="Upload high-res product photos, event pictures, or brand announcements"
+                  label="Choose a photo from your device"
+                  hint="Select from your phone gallery, camera, or computer. BRANDSCOPE optimizes and uploads it securely."
                   value={imageUrl}
                   onChange={setImageUrl}
+                  allowUrl={false}
                 />
               </div>
             )}

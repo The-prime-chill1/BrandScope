@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { BrandCard } from '../../components/brand/BrandCard';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SelectField } from '../../components/common/SelectField';
 import { dataStore } from '../../services/dataStore';
-import { Search, Building2, X, ShoppingBag } from 'lucide-react';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
+import { Search, Building2, X, ShoppingBag, SlidersHorizontal, MapPin, ArrowDownAZ } from 'lucide-react';
 
 export const DiscoverPage = () => {
+  const storeVersion = useDataStoreVersion();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
   const initialCategory = searchParams.get('category') || '';
@@ -42,12 +45,12 @@ export const DiscoverPage = () => {
   const countries = useMemo(() => {
     const set = new Set(dataStore.brands.map((b) => b.country).filter(Boolean));
     return Array.from(set);
-  }, []);
+  }, [storeVersion]);
 
   const cities = useMemo(() => {
     const set = new Set(dataStore.brands.map((b) => b.city).filter(Boolean));
     return Array.from(set);
-  }, []);
+  }, [storeVersion]);
 
   const brands = useMemo(() => {
     let list = dataStore.getBrands({
@@ -72,7 +75,7 @@ export const DiscoverPage = () => {
     }
 
     return list;
-  }, [selectedCategory, selectedCountry, selectedCity, search, hasProductsOnly, sortBy]);
+  }, [selectedCategory, selectedCountry, selectedCity, search, hasProductsOnly, sortBy, storeVersion]);
 
   const visibleBrands = brands.slice(0, visibleCount);
 
@@ -88,51 +91,29 @@ export const DiscoverPage = () => {
   const hasActiveFilters = Boolean(search || selectedCategory || selectedCountry || selectedCity || hasProductsOnly);
 
   return (
-    <div style={{ paddingBottom: 'var(--space-16)' }}>
-      {/* Header Bar */}
-      <section
-        style={{
-          backgroundColor: 'var(--color-navy)',
-          color: '#FFFFFF',
-          padding: 'var(--space-10) 0',
-          marginBottom: 'var(--space-8)'
-        }}
-      >
+    <div className="discover-page">
+      <section className="discover-hero">
         <div className="container">
-          <div style={{ maxWidth: '680px' }}>
-            <h1 style={{ color: '#FFFFFF', fontSize: '2.4rem', marginBottom: '8px' }}>
-              Discover Commercial Brands
-            </h1>
-            <p style={{ color: '#CBD5E1', fontSize: '1.05rem', lineHeight: 1.6 }}>
+          <div className="discover-hero-content">
+            <span className="discover-hero-kicker"><Search size={14} /> Business directory</span>
+            <h1>Discover Commercial Brands</h1>
+            <p>
               Explore companies, startups, makers, service providers, and direct digital storefronts across Nigeria and globally.
             </p>
           </div>
         </div>
       </section>
 
-      <div className="container">
-        {/* Filter Controls Bar */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-5)',
-            marginBottom: 'var(--space-8)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Search Input */}
-            <div style={{ flex: '2 1 240px', position: 'relative' }}>
-              <Search
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--color-text-muted)'
-                }}
-              />
+      <div className="container discover-content">
+        <div className="discover-filter-card">
+          <div className="discover-filter-heading">
+            <div><SlidersHorizontal size={17} /><span>Refine discovery</span></div>
+            {hasActiveFilters && <button type="button" onClick={resetFilters}><X size={15} /> Clear filters</button>}
+          </div>
+          <div className="discover-filter-grid">
+            <label className="discover-filter-field discover-search-field">
+              <span>Search directory</span>
+              <div className="discover-control-wrap"><Search size={17} />
               <input
                 type="text"
                 className="form-input"
@@ -142,62 +123,56 @@ export const DiscoverPage = () => {
                   setSearch(e.target.value);
                   updateFilters({ search: e.target.value });
                 }}
-                style={{ paddingLeft: '34px' }}
+              />
+              </div>
+            </label>
+
+            <div className="discover-filter-field">
+              <span>Industry</span>
+              <SelectField
+                value={selectedCategory}
+                ariaLabel="Filter by industry"
+                options={[
+                  { value: '', label: 'All Categories' },
+                  ...dataStore.categories.map((category) => ({ value: category.slug, label: category.name }))
+                ]}
+                onChange={(nextValue) => {
+                  setSelectedCategory(nextValue);
+                  updateFilters({ category: nextValue });
+                }}
               />
             </div>
 
-            {/* Category Dropdown */}
-            <div style={{ flex: '1 1 170px' }}>
-              <select
-                className="form-select"
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  updateFilters({ category: e.target.value });
-                }}
-              >
-                <option value="">All Categories</option>
-                {dataStore.categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* City / State Hub Dropdown (Nigerian Hubs) */}
-            <div style={{ flex: '1 1 150px' }}>
-              <select
-                className="form-select"
+            <div className="discover-filter-field">
+              <span><MapPin size={13} /> Location hub</span>
+              <SelectField
                 value={selectedCity}
-                onChange={(e) => {
-                  setSelectedCity(e.target.value);
-                  updateFilters({ city: e.target.value });
+                ariaLabel="Filter by location hub"
+                options={[
+                  { value: '', label: 'All Cities / Hubs' },
+                  ...cities.map((city) => ({ value: city, label: city }))
+                ]}
+                onChange={(nextValue) => {
+                  setSelectedCity(nextValue);
+                  updateFilters({ city: nextValue });
                 }}
-              >
-                <option value="">All Cities / Hubs</option>
-                {cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
-            {/* Sort Dropdown */}
-            <div style={{ flex: '1 1 140px' }}>
-              <select
-                className="form-select"
+            <div className="discover-filter-field">
+              <span><ArrowDownAZ size={13} /> Sort results</span>
+              <SelectField
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="popular">Most Followed</option>
-                <option value="newest">Recently Joined</option>
-                <option value="name">Alphabetical</option>
-              </select>
+                ariaLabel="Sort discovery results"
+                options={[
+                  { value: 'popular', label: 'Most Followed' },
+                  { value: 'newest', label: 'Recently Joined' },
+                  { value: 'name', label: 'Alphabetical' }
+                ]}
+                onChange={setSortBy}
+              />
             </div>
 
-            {/* Has Products / Storefront Filter */}
             <button
               type="button"
               onClick={() => {
@@ -205,39 +180,16 @@ export const DiscoverPage = () => {
                 setHasProductsOnly(next);
                 updateFilters({ hasProducts: next ? 'true' : '' });
               }}
-              className={`btn btn-sm ${hasProductsOnly ? 'btn-primary' : 'btn-outline'}`}
-              style={{ gap: '6px', padding: '9px 12px', fontSize: '0.825rem' }}
+              className={`discover-catalog-toggle ${hasProductsOnly ? 'is-active' : ''}`}
             >
-              <ShoppingBag size={14} />
-              <span>With Catalog</span>
+              <span className="discover-catalog-icon"><ShoppingBag size={17} /></span>
+              <span><strong>With catalog</strong><small>Show brands selling products or services</small></span>
             </button>
-
-            {/* Reset Button */}
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="btn btn-ghost btn-sm"
-                style={{ padding: '8px 12px', gap: '4px', fontSize: '0.825rem' }}
-                title="Clear all filters"
-              >
-                <X size={15} />
-                <span>Reset</span>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Results Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 'var(--space-6)'
-          }}
-        >
-          <div style={{ fontSize: '0.95rem', color: 'var(--color-text-secondary)' }}>
+        <div className="discover-results-header">
+          <div>
             Showing <strong>{visibleBrands.length}</strong> of <strong>{brands.length}</strong> businesses
           </div>
         </div>
@@ -261,12 +213,11 @@ export const DiscoverPage = () => {
 
         {/* Load More Pagination */}
         {visibleBrands.length < brands.length && (
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-10)' }}>
+          <div className="discover-load-more">
             <button
               type="button"
               onClick={() => setVisibleCount((prev) => prev + 9)}
               className="btn btn-outline"
-              style={{ padding: '12px 32px' }}
             >
               Load More Brands
             </button>

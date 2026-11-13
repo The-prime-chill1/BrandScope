@@ -1,123 +1,125 @@
-import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
 
-// Layouts
 import PublicLayout from '../layouts/PublicLayout';
-import DashboardLayout from '../layouts/DashboardLayout';
-import AdminLayout from '../layouts/AdminLayout';
 
-// Public Pages
-import HomePage from '../pages/public/HomePage';
-import DiscoverPage from '../pages/public/DiscoverPage';
-import CategoriesPage from '../pages/public/CategoriesPage';
-import CategoryDetailPage from '../pages/public/CategoryDetailPage';
-import BrandProfilePage from '../pages/public/BrandProfilePage';
-import FeedPage from '../pages/public/FeedPage';
-import PostDetailPage from '../pages/public/PostDetailPage';
-import ProductDetailPage from '../pages/public/ProductDetailPage';
-import { AboutPage, ContactPage, PrivacyPage, TermsPage, GuidelinesPage } from '../pages/public/StaticPages';
+const lazyDefault = (loader) => lazy(loader);
+const lazyNamed = (loader, exportName) => lazy(() => loader().then((module) => ({ default: module[exportName] })));
+const routeElement = (Component) => (
+  <Suspense fallback={<div className="workspace-loading"><span className="workspace-loading-mark" />Loading BRANDSCOPE...</div>}>
+    <Component />
+  </Suspense>
+);
 
-// Auth Pages
-import LoginPage from '../pages/auth/LoginPage';
-import SignupPage from '../pages/auth/SignupPage';
-import { ForgotPasswordPage, VerifyEmailPage, SetPasswordPage, AuthConfirmPage } from '../pages/auth/ForgotPasswordPage';
+const DashboardLayout = lazyDefault(() => import('../layouts/DashboardLayout'));
+const AdminLayout = lazyDefault(() => import('../layouts/AdminLayout'));
 
-// Dashboard Pages
-import DashboardOverview from '../pages/dashboard/DashboardOverview';
-import BrandProfileEditor from '../pages/dashboard/BrandProfileEditor';
-import ManagePosts from '../pages/dashboard/ManagePosts';
-import ManageProducts from '../pages/dashboard/ManageProducts';
-import VerificationPortal from '../pages/dashboard/VerificationPortal';
-import FollowersPage from '../pages/dashboard/FollowersPage';
-import NotificationsPage from '../pages/dashboard/NotificationsPage';
-import AnalyticsPage from '../pages/dashboard/AnalyticsPage';
-import AccountSettings from '../pages/dashboard/AccountSettings';
+const HomePage = lazyDefault(() => import('../pages/public/HomePage'));
+const DiscoverPage = lazyDefault(() => import('../pages/public/DiscoverPage'));
+const CategoriesPage = lazyDefault(() => import('../pages/public/CategoriesPage'));
+const CategoryDetailPage = lazyDefault(() => import('../pages/public/CategoryDetailPage'));
+const BrandProfilePage = lazyDefault(() => import('../pages/public/BrandProfilePage'));
+const FeedPage = lazyDefault(() => import('../pages/public/FeedPage'));
+const PostDetailPage = lazyDefault(() => import('../pages/public/PostDetailPage'));
+const ProductDetailPage = lazyDefault(() => import('../pages/public/ProductDetailPage'));
+const FaqPage = lazyDefault(() => import('../pages/public/FaqPage'));
+const NotFoundPage = lazyDefault(() => import('../pages/public/NotFoundPage'));
 
-// Admin Pages
-import {
-  AdminOverview,
-  AdminBrands,
-  AdminPosts,
-  AdminReports,
-  AdminCategories,
-  AdminUsers,
-  AdminAuditLogs,
-  AdminSettings
-} from '../pages/admin/AdminPages';
+const loadStaticPages = () => import('../pages/public/StaticPages');
+const AboutPage = lazyNamed(loadStaticPages, 'AboutPage');
+const ContactPage = lazyNamed(loadStaticPages, 'ContactPage');
+const PrivacyPage = lazyNamed(loadStaticPages, 'PrivacyPage');
+const TermsPage = lazyNamed(loadStaticPages, 'TermsPage');
+const GuidelinesPage = lazyNamed(loadStaticPages, 'GuidelinesPage');
+
+const LoginPage = lazyDefault(() => import('../pages/auth/LoginPage'));
+const SignupPage = lazyDefault(() => import('../pages/auth/SignupPage'));
+const loadPasswordPages = () => import('../pages/auth/ForgotPasswordPage');
+const ForgotPasswordPage = lazyNamed(loadPasswordPages, 'ForgotPasswordPage');
+const VerifyEmailPage = lazyNamed(loadPasswordPages, 'VerifyEmailPage');
+const SetPasswordPage = lazyNamed(loadPasswordPages, 'SetPasswordPage');
+const AuthConfirmPage = lazyNamed(loadPasswordPages, 'AuthConfirmPage');
+
+const DashboardOverview = lazyDefault(() => import('../pages/dashboard/DashboardOverview'));
+const BrandProfileEditor = lazyDefault(() => import('../pages/dashboard/BrandProfileEditor'));
+const ManagePosts = lazyDefault(() => import('../pages/dashboard/ManagePosts'));
+const ManageProducts = lazyDefault(() => import('../pages/dashboard/ManageProducts'));
+const VerificationPortal = lazyDefault(() => import('../pages/dashboard/VerificationPortal'));
+const FollowersPage = lazyDefault(() => import('../pages/dashboard/FollowersPage'));
+const NotificationsPage = lazyDefault(() => import('../pages/dashboard/NotificationsPage'));
+const AnalyticsPage = lazyDefault(() => import('../pages/dashboard/AnalyticsPage'));
+const AccountSettings = lazyDefault(() => import('../pages/dashboard/AccountSettings'));
+
+const loadAdminPages = () => import('../pages/admin/AdminPages');
+const AdminOverview = lazyNamed(loadAdminPages, 'AdminOverview');
+const AdminBrands = lazyNamed(loadAdminPages, 'AdminBrands');
+const AdminPosts = lazyNamed(loadAdminPages, 'AdminPosts');
+const AdminReports = lazyNamed(loadAdminPages, 'AdminReports');
+const AdminInquiries = lazyNamed(loadAdminPages, 'AdminInquiries');
+const AdminCategories = lazyNamed(loadAdminPages, 'AdminCategories');
+const AdminUsers = lazyNamed(loadAdminPages, 'AdminUsers');
+const AdminAuditLogs = lazyNamed(loadAdminPages, 'AdminAuditLogs');
+const AdminSettings = lazyNamed(loadAdminPages, 'AdminSettings');
 
 export const router = createBrowserRouter([
-  // Public Routes
   {
     path: '/',
     element: <PublicLayout />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'discover', element: <DiscoverPage /> },
-      { path: 'categories', element: <CategoriesPage /> },
-      { path: 'categories/:slug', element: <CategoryDetailPage /> },
-      { path: 'brand/:slug', element: <BrandProfilePage /> },
-      { path: 'feed', element: <FeedPage /> },
-      { path: 'post/:postId', element: <PostDetailPage /> },
-      { path: 'product/:productId', element: <ProductDetailPage /> },
-      { path: 'search', element: <DiscoverPage /> },
-      { path: 'about', element: <AboutPage /> },
-      { path: 'contact', element: <ContactPage /> },
-      { path: 'privacy', element: <PrivacyPage /> },
-      { path: 'terms', element: <TermsPage /> },
-      { path: 'guidelines', element: <GuidelinesPage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'signup', element: <SignupPage /> },
-      { path: 'forgot-password', element: <ForgotPasswordPage /> },
-      { path: 'verify-email', element: <VerifyEmailPage /> },
-      { path: 'set-password', element: <SetPasswordPage /> },
-      { path: 'auth/confirm', element: <AuthConfirmPage /> },
+      { index: true, element: routeElement(HomePage) },
+      { path: 'discover', element: routeElement(DiscoverPage) },
+      { path: 'categories', element: routeElement(CategoriesPage) },
+      { path: 'categories/:slug', element: routeElement(CategoryDetailPage) },
+      { path: 'brand/:slug', element: routeElement(BrandProfilePage) },
+      { path: 'feed', element: routeElement(FeedPage) },
+      { path: 'post/:postId', element: routeElement(PostDetailPage) },
+      { path: 'product/:productId', element: routeElement(ProductDetailPage) },
+      { path: 'search', element: routeElement(DiscoverPage) },
+      { path: 'about', element: routeElement(AboutPage) },
+      { path: 'faq', element: routeElement(FaqPage) },
+      { path: 'contact', element: routeElement(ContactPage) },
+      { path: 'privacy', element: routeElement(PrivacyPage) },
+      { path: 'terms', element: routeElement(TermsPage) },
+      { path: 'guidelines', element: routeElement(GuidelinesPage) },
+      { path: 'login', element: routeElement(LoginPage) },
+      { path: 'signup', element: routeElement(SignupPage) },
+      { path: 'forgot-password', element: routeElement(ForgotPasswordPage) },
+      { path: 'verify-email', element: routeElement(VerifyEmailPage) },
+      { path: 'set-password', element: routeElement(SetPasswordPage) },
+      { path: 'auth/confirm', element: routeElement(AuthConfirmPage) },
     ]
   },
-
-  // Authenticated Brand Dashboard Routes
   {
     path: '/dashboard',
-    element: <DashboardLayout />,
+    element: routeElement(DashboardLayout),
     children: [
-      { index: true, element: <DashboardOverview /> },
-      { path: 'profile', element: <BrandProfileEditor /> },
-      { path: 'products', element: <ManageProducts /> },
-      { path: 'posts', element: <ManagePosts /> },
-      { path: 'followers', element: <FollowersPage /> },
-      { path: 'notifications', element: <NotificationsPage /> },
-      { path: 'analytics', element: <AnalyticsPage /> },
-      { path: 'verification', element: <VerificationPortal /> },
-      { path: 'settings', element: <AccountSettings /> },
+      { index: true, element: routeElement(DashboardOverview) },
+      { path: 'profile', element: routeElement(BrandProfileEditor) },
+      { path: 'products', element: routeElement(ManageProducts) },
+      { path: 'posts', element: routeElement(ManagePosts) },
+      { path: 'followers', element: routeElement(FollowersPage) },
+      { path: 'notifications', element: routeElement(NotificationsPage) },
+      { path: 'analytics', element: routeElement(AnalyticsPage) },
+      { path: 'verification', element: routeElement(VerificationPortal) },
+      { path: 'settings', element: routeElement(AccountSettings) },
     ]
   },
-
-  // Protected Admin Console Routes
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: routeElement(AdminLayout),
     children: [
-      { index: true, element: <AdminOverview /> },
-      { path: 'brands', element: <AdminBrands /> },
-      { path: 'posts', element: <AdminPosts /> },
-      { path: 'reports', element: <AdminReports /> },
-      { path: 'categories', element: <AdminCategories /> },
-      { path: 'users', element: <AdminUsers /> },
-      { path: 'audit-logs', element: <AdminAuditLogs /> },
-      { path: 'settings', element: <AdminSettings /> },
+      { index: true, element: routeElement(AdminOverview) },
+      { path: 'brands', element: routeElement(AdminBrands) },
+      { path: 'posts', element: routeElement(AdminPosts) },
+      { path: 'reports', element: routeElement(AdminReports) },
+      { path: 'inquiries', element: routeElement(AdminInquiries) },
+      { path: 'categories', element: routeElement(AdminCategories) },
+      { path: 'users', element: routeElement(AdminUsers) },
+      { path: 'audit-logs', element: routeElement(AdminAuditLogs) },
+      { path: 'settings', element: routeElement(AdminSettings) },
     ]
   },
-
-  // Fallback 404
-  {
-    path: '*',
-    element: (
-      <div style={{ textAlign: 'center', padding: '80px 20px', fontFamily: 'var(--font-body)' }}>
-        <h2>404 — Page Not Found</h2>
-        <p style={{ marginTop: '8px', marginBottom: '24px' }}>The requested route does not exist on BRANDSCOPE.</p>
-        <a href="/" style={{ color: 'var(--color-blue)', fontWeight: 600 }}>Return to Homepage</a>
-      </div>
-    )
-  }
+  { path: '*', element: routeElement(NotFoundPage) }
 ]);
 
 export default router;

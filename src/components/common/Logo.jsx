@@ -87,7 +87,7 @@ export const Logo = ({
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
           <span
             style={{
-              fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
+              fontFamily: "var(--font-heading, 'Sora', sans-serif)",
               fontSize: `${Math.max(16, size * 0.54)}px`,
               fontWeight: 800,
               letterSpacing: '0.06em',
@@ -101,7 +101,7 @@ export const Logo = ({
           {showTagline && (
             <span
               style={{
-                fontFamily: "var(--font-body, 'Inter', sans-serif)",
+                fontFamily: "var(--font-body, 'Manrope', sans-serif)",
                 fontSize: `${Math.max(9, size * 0.22)}px`,
                 fontWeight: 600,
                 letterSpacing: '0.18em',

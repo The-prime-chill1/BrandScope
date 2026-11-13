@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
 import { PostCard } from '../../components/posts/PostCard';
 import { PostCreator } from '../../components/posts/PostCreator';
 import { EmptyState } from '../../components/common/EmptyState';
 import { FileText, PlusCircle } from 'lucide-react';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 export const ManagePosts = () => {
+  const storeVersion = useDataStoreVersion();
   const { user, currentBrand } = useAuth();
   const [posts, setPosts] = useState(
     currentBrand ? dataStore.getPosts({ brandId: currentBrand.id }) : []
   );
+
+  useEffect(() => {
+    setPosts(currentBrand ? dataStore.getPosts({ brandId: currentBrand.id }) : []);
+  }, [currentBrand, storeVersion]);
 
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);

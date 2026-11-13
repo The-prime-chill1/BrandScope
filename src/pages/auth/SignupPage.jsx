@@ -5,7 +5,9 @@ import { dataStore } from '../../services/dataStore';
 import { Logo } from '../../components/common/Logo';
 import { BrandCard } from '../../components/brand/BrandCard';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { SelectField } from '../../components/common/SelectField';
 import { getSiteHost } from '../../lib/site';
+import { normalizeContactEmail, normalizeExternalUrl, normalizeWhatsAppContact } from '../../lib/contact';
 import { 
   Building2, 
   User, 
@@ -25,8 +27,10 @@ import {
   Store,
   Upload,
   Eye,
-  EyeOff
+  EyeOff,
+  Phone
 } from 'lucide-react';
+import { preloadBrandWorkspace } from '../../app/preloadWorkspace';
 
 export const SignupPage = () => {
   const { signup } = useAuth();
@@ -56,6 +60,8 @@ export const SignupPage = () => {
   const [country, setCountry] = useState('Nigeria');
   const [city, setCity] = useState('Lagos');
   const [whatsapp, setWhatsapp] = useState('');
+  const [phone, setPhone] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [cacNumber, setCacNumber] = useState('');
   const [documentUrl, setDocumentUrl] = useState('');
@@ -98,8 +104,8 @@ export const SignupPage = () => {
         setError('Please fill in your brand name, unique slug, and description.');
         return;
       }
-      if (!whatsapp.trim() && !website.trim()) {
-        setError('Please provide at least a WhatsApp contact number or an official website so customers can reach your brand.');
+      if (![whatsapp, phone, businessEmail, website].some((value) => value.trim())) {
+        setError('Add at least one public contact method: WhatsApp, phone, email, or website.');
         return;
       }
       // Check slug collision
@@ -117,9 +123,13 @@ export const SignupPage = () => {
   const handleFinishRegistration = async () => {
     setError('');
     setSubmitting(true);
+    void preloadBrandWorkspace();
 
     try {
       const selectedCategoryObj = dataStore.categories.find((c) => c.name === category);
+      const normalizedWhatsApp = normalizeWhatsAppContact(whatsapp);
+      const normalizedWebsite = normalizeExternalUrl(website);
+      const normalizedBusinessEmail = normalizeContactEmail(businessEmail);
 
       const registeredUser = await signup({
         email,
@@ -133,9 +143,10 @@ export const SignupPage = () => {
           categorySlug: selectedCategoryObj?.slug || 'technology',
           country,
           city,
-          whatsapp: whatsapp.trim(),
-          phone: whatsapp.trim(),
-          website: website.trim(),
+          whatsapp: normalizedWhatsApp,
+          phone: phone.trim(),
+          contactEmail: normalizedBusinessEmail,
+          website: normalizedWebsite,
           cacNumber: cacNumber.trim(),
           brandType,
           verificationStatus: brandType === 'enterprise' && cacNumber.trim() ? 'pending' : 'unverified',
@@ -163,6 +174,8 @@ export const SignupPage = () => {
     country,
     city,
     whatsapp,
+    phone,
+    contactEmail: businessEmail,
     website,
     cacNumber,
     shortDescription: shortDescription || 'Your short description will appear here on your public discovery card.',
@@ -463,17 +476,12 @@ export const SignupPage = () => {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Primary Industry Category</label>
-                  <select
-                    className="form-select"
+                  <SelectField
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    {dataStore.categories.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    ariaLabel="Primary industry category"
+                    options={dataStore.categories.map((item) => ({ value: item.name, label: item.name }))}
+                    onChange={setCategory}
+                  />
                 </div>
 
                 <div className="form-group">
@@ -498,41 +506,75 @@ export const SignupPage = () => {
                 </div>
               </div>
 
-              {/* Contact Channels: WhatsApp and Website */}
-              <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', marginBottom: 'var(--space-5)' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <MessageSquare size={16} color="#16845B" />
-                  <span>Customer Contact & Order Channels</span>
-                </h4>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    WhatsApp Contact Number {brandType === 'small' ? '*' : '(Recommended)'}
-                  </label>
-                  <input
-                    type="tel"
-                    className="form-input"
-                    placeholder="+234 801 234 5678 or 08012345678"
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                  />
-                  <div className="form-hint" style={{ color: '#059669' }}>
-                    Enables 1-click customer chats and product inquiries directly from your profile card!
+              <div className="signup-contact-panel">
+                <div className="signup-contact-intro">
+                  <span className="signup-contact-icon"><MessageSquare size={18} /></span>
+                  <div>
+                    <h4>How should customers reach your brand?</h4>
+                    <p>Add one or all four options. Only the contact details you enter here will appear publicly.</p>
                   </div>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Official Website (Optional)</label>
-                  <input
-                    type="url"
-                    className="form-input"
-                    placeholder="https://mybrand.com (leave empty if you sell via WhatsApp only)"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                  <div className="form-hint">
-                    No website? No problem! Your WhatsApp link will act as your primary direct customer ordering line.
+                <div className="grid-2 signup-contact-grid">
+                  <div className="form-group">
+                    <label className="form-label">WhatsApp number or link</label>
+                    <input
+                      type="text"
+                      inputMode="tel"
+                      className="form-input"
+                      placeholder="+234 801 234 5678 or https://wa.me/234..."
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                    />
+                    <div className="form-hint">BRANDSCOPE turns a number into a direct WhatsApp link.</div>
                   </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Direct phone number</label>
+                    <div className="contact-input-icon-wrap">
+                      <Phone size={15} />
+                      <input
+                        type="tel"
+                        className="form-input"
+                        placeholder="+234 801 234 5678"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Public business email</label>
+                    <div className="contact-input-icon-wrap">
+                      <Mail size={15} />
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="hello@mybrand.com"
+                        value={businessEmail}
+                        onChange={(e) => setBusinessEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Official website</label>
+                    <div className="contact-input-icon-wrap">
+                      <Globe size={15} />
+                      <input
+                        type="text"
+                        inputMode="url"
+                        className="form-input"
+                        placeholder="https://mybrand.com"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="signup-contact-note">
+                  A website is never required. WhatsApp, phone, or email can be your brand's primary public contact channel.
                 </div>
               </div>
 

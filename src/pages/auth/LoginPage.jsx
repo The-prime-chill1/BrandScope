@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../../components/common/Logo';
-import { Mail, Lock, AlertCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Eye, EyeOff, ShieldCheck, Building2, Search, BarChart3, ArrowRight } from 'lucide-react';
+import { isAdministratorEmail } from '../../config/admins';
+import { preloadAdminWorkspace, preloadBrandWorkspace } from '../../app/preloadWorkspace';
 
 export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const adminMode = searchParams.get('mode') === 'admin';
   const from = location.state?.from?.pathname || '/dashboard';
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,130 +20,86 @@ export const LoginPage = () => {
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
-
     try {
+      void (isAdministratorEmail(email) ? preloadAdminWorkspace() : preloadBrandWorkspace());
       const user = await login(email, password, remember);
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate(from);
-      }
-    } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      navigate(user.role === 'admin' ? '/admin' : from, { replace: true });
+    } catch (submitError) {
+      setError(submitError.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page-shell">
-      <div className="auth-panel">
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
-          <Link to="/" style={{ display: 'inline-block', marginBottom: 'var(--space-4)' }}>
-            <Logo size={42} showWordmark={true} />
-          </Link>
-          <div className="auth-kicker"><ShieldCheck size={14} /> Secure brand workspace</div>
-          <h1 className="auth-title">Welcome back</h1>
-          <p style={{ marginTop: '4px', fontSize: '0.9rem' }}>
-            Sign in to manage your profile, products, posts, and business connections.
-          </p>
-        </div>
-
-        <div className="card auth-card">
-          {error && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                backgroundColor: 'var(--color-error-bg)',
-                color: 'var(--color-error)',
-                border: '1px solid var(--color-error-border)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.85rem',
-                marginBottom: 'var(--space-4)'
-              }}
-            >
-              <AlertCircle size={16} />
-              <span>{error}</span>
+    <div className={`auth-page-shell auth-login-shell ${adminMode ? 'is-admin-login' : ''}`}>
+      <div className="auth-experience">
+        <section className="auth-story">
+          <Link to="/" className="auth-story-logo"><Logo size={39} showWordmark light /></Link>
+          <div className="auth-story-content">
+            <span className="auth-story-kicker"><ShieldCheck size={14} /> {adminMode ? 'Protected platform access' : 'Business discovery network'}</span>
+            <h2>{adminMode ? 'Operate the platform with clarity and control.' : 'Build a discoverable home for your brand.'}</h2>
+            <p>{adminMode
+              ? 'Review business identities, verification requests, reports, and platform security from one protected operations workspace.'
+              : 'Manage your public profile, showcase products, publish updates, and connect directly with people discovering your business.'}</p>
+            <div className="auth-story-points">
+              <div><span><Building2 size={18} /></span><div><strong>{adminMode ? 'Brand registry' : 'Professional storefront'}</strong><small>{adminMode ? 'Review every business joining the network.' : 'Present your identity, products, and direct contact details.'}</small></div></div>
+              <div><span><Search size={18} /></span><div><strong>{adminMode ? 'Trust operations' : 'Search visibility'}</strong><small>{adminMode ? 'Resolve reports and verification requests efficiently.' : 'Create permanent pages search engines can discover.'}</small></div></div>
+              <div><span><BarChart3 size={18} /></span><div><strong>{adminMode ? 'Security visibility' : 'Business insights'}</strong><small>{adminMode ? 'Monitor protected actions and platform health.' : 'Understand how people interact with your brand presence.'}</small></div></div>
             </div>
-          )}
+          </div>
+          <div className="auth-story-footer"><span>BRANDSCOPE</span><small>Where Brands Get Discovered.</small></div>
+        </section>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Business Email</label>
-              <div className="auth-input-wrap">
-                <Mail size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                <input
-                  type="email"
-                  required
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
-                  placeholder="contact@yourbrand.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+        <section className="auth-form-column">
+          <div className="auth-form-heading">
+            <span className="auth-kicker"><ShieldCheck size={14} /> {adminMode ? 'Platform operations' : 'Secure brand workspace'}</span>
+            <h1>{adminMode ? 'Administrator sign in' : 'Welcome back'}</h1>
+            <p>{adminMode ? 'Use an authorized administrator account to continue.' : 'Sign in to manage your profile, products, posts, and business connections.'}</p>
+          </div>
+
+          <div className="card auth-card auth-login-card">
+            {error && <div className="auth-error"><AlertCircle size={17} /><span>{error}</span></div>}
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="login-email">Business email</label>
+                <div className="auth-input-wrap">
+                  <Mail size={17} className="auth-input-icon" />
+                  <input id="login-email" type="email" required autoComplete="email" className="form-input" placeholder="contact@yourbrand.com" value={email} onChange={(event) => setEmail(event.target.value)} />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
-                <label className="form-label" style={{ margin: 0 }}>Password</label>
-                <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--color-blue)' }}>
-                  Forgot password?
-                </Link>
+              <div className="form-group">
+                <div className="auth-label-row"><label className="form-label" htmlFor="login-password">Password</label><Link to="/forgot-password">Forgot password?</Link></div>
+                <div className="auth-input-wrap">
+                  <Lock size={17} className="auth-input-icon" />
+                  <input id="login-password" type={showPassword ? 'text' : 'password'} required autoComplete="current-password" className="form-input" placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} />
+                  <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
-              <div className="auth-input-wrap">
-                <Lock size={16} color="var(--color-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="auth-password-toggle"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              </div>
-            </div>
 
-            <label className="auth-remember-row">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(event) => setRemember(event.target.checked)}
-              />
-              <span>
-                <strong>Remember me</strong>
-                <small>Keep me signed in on this device.</small>
-              </span>
-            </label>
+              <label className="auth-remember-row">
+                <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+                <span><strong>Remember me</strong><small>Keep this device signed in until you log out.</small></span>
+              </label>
 
-            <button type="submit" disabled={loading} className="btn btn-primary btn-block" style={{ marginTop: 'var(--space-4)' }}>
-              {loading ? 'Authenticating...' : 'Sign In to Dashboard'}
-            </button>
-          </form>
-        </div>
+              <button type="submit" disabled={loading} className="btn btn-primary btn-block auth-submit-btn">
+                <span>{loading ? 'Signing you in...' : adminMode ? 'Enter platform operations' : 'Sign in to workspace'}</span>
+                {!loading && <ArrowRight size={17} />}
+              </button>
+            </form>
+          </div>
 
-        <div style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontSize: '0.9rem' }}>
-          Don't have a brand profile yet?{' '}
-          <Link to="/signup" style={{ fontWeight: 600 }}>
-            Register Your Brand
-          </Link>
-        </div>
+          <div className="auth-form-footer">
+            {adminMode ? <><Link to="/login">Brand owner sign in</Link><span>Administrator access is role-protected.</span></> : <span>New to BRANDSCOPE? <Link to="/signup">Create your brand profile</Link></span>}
+          </div>
+        </section>
       </div>
     </div>
   );

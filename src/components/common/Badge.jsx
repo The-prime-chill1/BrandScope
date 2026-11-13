@@ -14,14 +14,20 @@ export const VerificationBadge = ({ size = 16, className = '' }) => (
 
 export const StatusBadge = ({ status }) => {
   const norm = (status || '').toLowerCase();
+  const label = norm === 'in_progress'
+    ? 'In progress'
+    : norm === 'review_required'
+      ? 'Review required'
+      : status;
   if (norm === 'active' || norm === 'approved' || norm === 'resolved') {
-    return <span className="badge badge-success">{status}</span>;
+    return <span className="badge badge-success">{label}</span>;
   }
-  if (norm === 'pending' || norm === 'review_required' || norm === 'unverified') {
-    return <span className="badge badge-warning">{status}</span>;
+  if (norm === 'pending' || norm === 'review_required' || norm === 'unverified' || norm === 'in_progress') {
+    return <span className="badge badge-warning">{label}</span>;
   }
   if (norm === 'suspended' || norm === 'failed' || norm === 'rejected' || norm === 'hidden') {
-    return <span className="badge badge-error">{status}</span>;
+    return <span className="badge badge-error">{label}</span>;
   }
-  return <span className="badge badge-neutral">{status}</span>;
+  if (norm === 'new') return <span className="badge badge-blue">New</span>;
+  return <span className="badge badge-neutral">{label}</span>;
 };

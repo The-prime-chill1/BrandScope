@@ -2,8 +2,10 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
 import { Users, FileText, Heart, MessageSquare, Package, BarChart3 } from 'lucide-react';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 export const AnalyticsPage = () => {
+  useDataStoreVersion();
   const { currentBrand } = useAuth();
   if (!currentBrand) return null;
 

@@ -4,8 +4,10 @@ import { dataStore } from '../../services/dataStore';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Users, Building, ExternalLink } from 'lucide-react';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 export const FollowersPage = () => {
+  useDataStoreVersion();
   const { currentBrand } = useAuth();
   const [activeTab, setActiveTab] = useState('followers'); // 'followers' | 'following'
 

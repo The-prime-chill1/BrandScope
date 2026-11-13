@@ -3,15 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BrandCard } from '../../components/brand/BrandCard';
 import { PostCard } from '../../components/posts/PostCard';
 import { dataStore } from '../../services/dataStore';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 import {
   Search,
   ArrowRight,
   Globe2,
-  TrendingUp,
   ShieldCheck,
-  BarChart3,
-  Zap,
-  Users,
   CheckCircle2,
   Building2,
   Cpu,
@@ -44,6 +41,7 @@ const CATEGORY_ICONS = {
 };
 
 export const HomePage = () => {
+  useDataStoreVersion();
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
@@ -105,27 +103,40 @@ export const HomePage = () => {
 
             {/* Right side — Stats / social proof */}
             <div className="hero-visual">
-              <div className="hero-stat-grid">
-                <div className="hero-stat-card">
-                  <div className="hero-stat-icon"><Globe2 size={22} /></div>
-                  <span className="hero-stat-label">Global Reach</span>
-                  <span className="hero-stat-desc">Brands from multiple countries</span>
+              <div className="home-hero-showcase">
+                <div className="home-hero-showcase-head">
+                  <span><ShieldCheck size={15} /> Member-published directory</span>
+                  <small>{recentBrands.length ? 'Recently listed' : 'Opening for brands'}</small>
                 </div>
-                <div className="hero-stat-card hero-stat-card--accent">
-                  <div className="hero-stat-icon"><TrendingUp size={22} /></div>
-                  <span className="hero-stat-label">Growing Daily</span>
-                  <span className="hero-stat-desc">New businesses joining weekly</span>
-                </div>
-                <div className="hero-stat-card">
-                  <div className="hero-stat-icon"><ShieldCheck size={22} /></div>
-                  <span className="hero-stat-label">Business-Only</span>
-                  <span className="hero-stat-desc">Purpose-built company profiles</span>
-                </div>
-                <div className="hero-stat-card">
-                  <div className="hero-stat-icon"><BarChart3 size={22} /></div>
-                  <span className="hero-stat-label">Analytics</span>
-                  <span className="hero-stat-desc">Track profile performance</span>
-                </div>
+
+                {recentBrands.length > 0 ? (
+                  <div className="home-hero-brand-list">
+                    {recentBrands.slice(0, 3).map((brand) => (
+                      <Link to={`/brand/${brand.slug}`} className="home-hero-brand-row" key={brand.id}>
+                        {brand.logoUrl ? (
+                          <img src={brand.logoUrl} alt="" />
+                        ) : (
+                          <span className="home-hero-brand-fallback">{brand.name?.charAt(0)?.toUpperCase() || 'B'}</span>
+                        )}
+                        <span className="home-hero-brand-copy">
+                          <strong>{brand.name}</strong>
+                          <small>{brand.category}{brand.city ? ` · ${brand.city}` : ''}</small>
+                        </span>
+                        <ArrowRight size={16} />
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="home-hero-showcase-empty">
+                    <Building2 size={34} />
+                    <strong>The directory starts with its members.</strong>
+                    <p>No sample brands or paid placements. Real business profiles will appear here as their owners join.</p>
+                  </div>
+                )}
+
+                <Link to={recentBrands.length ? '/discover' : '/signup'} className="home-hero-showcase-link">
+                  {recentBrands.length ? 'Explore every brand' : 'Publish your brand first'} <ArrowRight size={15} />
+                </Link>
               </div>
             </div>
           </div>
@@ -135,23 +146,36 @@ export const HomePage = () => {
       {/* ═══════════════════════════════════════════
           MEMBER-PUBLISHED DIRECTORY
           ═══════════════════════════════════════════ */}
-      {recentBrands.length === 0 && (
-        <section className="home-section home-section--surface">
-          <div className="container">
+      <section className="home-section home-brand-showcase-section">
+        <div className="container">
+          <div className="home-section-top">
+            <div>
+              <span className="section-eyebrow">The directory comes first</span>
+              <h2>Discover businesses, not advertisements.</h2>
+              <p>Every profile below is created and maintained by the brand itself.</p>
+            </div>
+            {recentBrands.length > 0 && (
+              <Link to="/discover" className="home-section-link">View all brands <ArrowRight size={15} /></Link>
+            )}
+          </div>
+
+          {recentBrands.length > 0 ? (
+            <div className="home-brand-grid home-brand-grid--4">
+              {recentBrands.slice(0, 4).map((brand) => <BrandCard key={brand.id} brand={brand} />)}
+            </div>
+          ) : (
             <div className="launch-empty-state">
               <div className="launch-empty-icon"><Building2 size={28} /></div>
               <div>
-                <span className="section-eyebrow">Built by its members</span>
-                <h2>Be among the first brands discovered</h2>
-                <p>No stock listings or fabricated profiles live here. Every profile, product, and update is published by a real business account.</p>
+                <span className="section-eyebrow">No brands listed yet</span>
+                <h2>Be the first business people discover.</h2>
+                <p>BRANDSCOPE does not use sample listings. This space will fill only with profiles published by real business owners.</p>
               </div>
-              <Link to="/signup" className="btn btn-primary">
-                Create a brand profile <ArrowRight size={15} />
-              </Link>
+              <Link to="/signup" className="btn btn-primary">Create your brand profile <ArrowRight size={15} /></Link>
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       {/* ═══════════════════════════════════════════
           EXPLORE CATEGORIES — Asymmetric grid
@@ -259,27 +283,6 @@ export const HomePage = () => {
       {/* ═══════════════════════════════════════════
           RECENTLY JOINED — Browse new brands
           ═══════════════════════════════════════════ */}
-      {recentBrands.length > 0 && (
-        <section className="home-section home-section--surface">
-          <div className="container">
-            <div className="home-section-top">
-              <div>
-                <h2>Recently Joined</h2>
-                <p>Businesses that recently created their profiles.</p>
-              </div>
-              <Link to="/discover" className="home-section-link">
-                Discover more <ArrowRight size={15} />
-              </Link>
-            </div>
-            <div className="home-brand-grid home-brand-grid--4">
-              {recentBrands.slice(0, 4).map((brand) => (
-                <BrandCard key={brand.id} brand={brand} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ═══════════════════════════════════════════
           TRUST & SECURITY BANNER
           ═══════════════════════════════════════════ */}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../common/Logo';
-import { ExternalLink, ShieldCheck, Heart } from 'lucide-react';
+import { ExternalLink, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,15 +11,16 @@ export const Footer = () => {
       <div className="container">
         <div className="footer-grid">
           {/* Brand Col */}
-          <div>
+          <div className="footer-brand-block">
             <Logo size={36} showWordmark={true} light={true} />
-            <p style={{ color: '#94A3B8', marginTop: 'var(--space-4)', maxWidth: '320px', fontSize: '0.9rem' }}>
+            <p className="footer-description">
               The global social platform designed exclusively for verified businesses, independent brands, startups, and commercial creators.
             </p>
-            <div style={{ marginTop: 'var(--space-5)', display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1', fontSize: '0.85rem' }}>
-              <ShieldCheck size={16} color="#38BDF8" />
+            <div className="footer-trust-line">
+              <ShieldCheck size={16} />
               <span>Strict Business-Only Identity Verification</span>
             </div>
+            <Link to="/signup" className="footer-primary-link">Create your brand profile <ArrowUpRight size={15} /></Link>
           </div>
 
           {/* Navigation Links */}
@@ -49,6 +50,7 @@ export const Footer = () => {
             <h4>Company</h4>
             <ul className="footer-links">
               <li><Link to="/about" className="footer-link">About BRANDSCOPE</Link></li>
+              <li><Link to="/faq" className="footer-link">Frequently Asked Questions</Link></li>
               <li><Link to="/contact" className="footer-link">Contact & Support</Link></li>
               <li><Link to="/guidelines" className="footer-link">Community Guidelines</Link></li>
             </ul>

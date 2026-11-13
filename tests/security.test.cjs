@@ -75,6 +75,38 @@ describe('BRANDSCOPE production invariants', () => {
     ]) {
       assert.match(migrations, new RegExp(email.replace('.', '\\.'), 'i'));
     }
+    const adminConfig = read('src/config/admins.js');
+    const configuredEmails = adminConfig.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || [];
+    assert.equal(configuredEmails.length, 3);
+  });
+
+  it('keeps authentication and workspace entry on a short non-blocking path', () => {
+    const auth = read('src/services/auth.js');
+    const context = read('src/contexts/AuthContext.jsx');
+    const store = read('src/services/dataStore.js');
+    const main = read('src/main.jsx');
+    const router = read('src/app/router.jsx');
+
+    assert.match(auth, /auth\.getSession\(\)/);
+    assert.doesNotMatch(auth, /auth\.getUser\(\)/);
+    assert.doesNotMatch(auth, /from\(['"]profiles['"]\)/);
+    assert.match(auth, /signOut\(\{ scope: ['"]local['"] \}\)/);
+    assert.match(context, /Promise\.allSettled/);
+    assert.match(store, /Promise\.all\(\[\s*notificationQuery/);
+    assert.match(main, /requestIdleCallback/);
+    assert.match(router, /\blazy\(/);
+  });
+
+  it('keeps local credentials and retired API scaffolding outside the project tree', () => {
+    assert.equal(fs.existsSync(path.join(root, '.env.example')), false);
+    assert.equal(fs.existsSync(path.join(root, 'api')), false);
+  });
+
+  it('keeps FAQ in the footer instead of the primary navbar', () => {
+    const navbar = read('src/components/navigation/Navbar.jsx');
+    const footer = read('src/components/navigation/Footer.jsx');
+    assert.doesNotMatch(navbar, /(?:href|to)=["']\/faq["']/);
+    assert.match(footer, /(?:href|to)=["']\/faq["']/);
   });
 
   it('provides Remember Me, password visibility, reset, and invite password flows', () => {
@@ -122,6 +154,39 @@ describe('BRANDSCOPE production invariants', () => {
     assert.match(vercel, /\/sitemap\.xml/);
     assert.doesNotMatch(html, /YOUR_GOOGLE_SEARCH_CONSOLE/);
     assert.doesNotMatch(html, /brandscope-og\.png/);
+  });
+
+  it('ships an installable PWA experience with offline fallback assets', () => {
+    const manifest = JSON.parse(read('public/site.webmanifest'));
+    const html = read('index.html');
+    const main = read('src/main.jsx');
+    const serviceWorker = read('public/sw.js');
+
+    assert.match(manifest.name, /^BRANDSCOPE/);
+    assert.equal(manifest.short_name, 'BRANDSCOPE');
+    assert.equal(manifest.start_url, '/');
+    assert.equal(manifest.display, 'standalone');
+    assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192'));
+    assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
+    assert.ok(fs.statSync(path.join(root, 'public', 'pwa-icon-192.png')).size > 0);
+    assert.ok(fs.statSync(path.join(root, 'public', 'pwa-icon-512.png')).size > 0);
+    assert.match(html, /site\.webmanifest/);
+    assert.match(main, /serviceWorker\.register\('\/sw\.js'\)/);
+    assert.match(serviceWorker, /offline\.html/);
+  });
+
+  it('uses the accessible BRANDSCOPE dropdown instead of awkward native selects', () => {
+    const jsxSource = walk(path.join(root, 'src'))
+      .filter((file) => /\.jsx$/.test(file))
+      .map((file) => fs.readFileSync(file, 'utf8'))
+      .join('\n');
+    const selectField = read('src/components/common/SelectField.jsx');
+
+    assert.doesNotMatch(jsxSource, /<select\b/i);
+    assert.match(selectField, /role="listbox"/);
+    assert.match(selectField, /aria-expanded/);
+    assert.match(selectField, /ArrowDown/);
+    assert.match(selectField, /select-mobile-backdrop/);
   });
 
   it('contains no legacy monetization or Firebase implementation in application source', () => {

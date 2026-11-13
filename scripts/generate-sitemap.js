@@ -8,6 +8,7 @@ const STATIC_ROUTES = [
   ['/categories', '0.8', 'weekly'],
   ['/feed', '0.8', 'daily'],
   ['/about', '0.6', 'monthly'],
+  ['/faq', '0.6', 'monthly'],
   ['/contact', '0.5', 'monthly'],
   ['/privacy', '0.3', 'monthly'],
   ['/terms', '0.3', 'monthly'],

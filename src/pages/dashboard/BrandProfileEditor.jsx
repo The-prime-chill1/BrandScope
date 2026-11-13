@@ -3,9 +3,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
 import { useToast } from '../../contexts/ToastContext';
 import { BrandCard } from '../../components/brand/BrandCard';
-import { Save, AlertCircle, Globe, Building2, Image } from 'lucide-react';
+import { Save, AlertCircle, Globe, Mail, MessageCircle, Phone } from 'lucide-react';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { SelectField } from '../../components/common/SelectField';
 import { getSiteHost } from '../../lib/site';
+import { normalizeContactEmail, normalizeExternalUrl, normalizeWhatsAppContact } from '../../lib/contact';
 
 export const BrandProfileEditor = () => {
   const { user, currentBrand, refreshBrand } = useAuth();
@@ -27,6 +29,7 @@ export const BrandProfileEditor = () => {
   const [instagram, setInstagram] = useState(currentBrand?.socials?.instagram || '');
   const [whatsapp, setWhatsapp] = useState(currentBrand?.whatsapp || '');
   const [phone, setPhone] = useState(currentBrand?.phone || '');
+  const [contactEmail, setContactEmail] = useState(currentBrand?.contactEmail || '');
   const [cacNumber, setCacNumber] = useState(currentBrand?.cacNumber || '');
   const [address, setAddress] = useState(currentBrand?.address || '');
   const [deliveryInfo, setDeliveryInfo] = useState(currentBrand?.deliveryInfo || '');
@@ -46,9 +49,17 @@ export const BrandProfileEditor = () => {
       return;
     }
 
+    if (![whatsapp, phone, contactEmail, website].some((value) => value.trim())) {
+      setError('Add at least one public contact method: WhatsApp, phone, email, or website.');
+      return;
+    }
+
     setSaving(true);
     try {
       const selectedCategoryObj = dataStore.categories.find((c) => c.name === category);
+      const normalizedWhatsApp = normalizeWhatsAppContact(whatsapp);
+      const normalizedWebsite = normalizeExternalUrl(website);
+      const normalizedContactEmail = normalizeContactEmail(contactEmail);
 
       await dataStore.updateBrand(
         currentBrand.id,
@@ -59,9 +70,10 @@ export const BrandProfileEditor = () => {
           categorySlug: selectedCategoryObj?.slug || 'technology',
           country,
           city,
-          website: website.trim(),
-          whatsapp: whatsapp.trim(),
+          website: normalizedWebsite,
+          whatsapp: normalizedWhatsApp,
           phone: phone.trim(),
+          contactEmail: normalizedContactEmail,
           cacNumber: cacNumber.trim(),
           address: address.trim(),
           deliveryInfo: deliveryInfo.trim(),
@@ -158,17 +170,12 @@ export const BrandProfileEditor = () => {
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Industry Category</label>
-                <select
-                  className="form-select"
+                <SelectField
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  {dataStore.categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  ariaLabel="Industry category"
+                  options={dataStore.categories.map((item) => ({ value: item.name, label: item.name }))}
+                  onChange={setCategory}
+                />
               </div>
 
               <div className="form-group">
@@ -183,30 +190,14 @@ export const BrandProfileEditor = () => {
               </div>
             </div>
 
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">City</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Official Website (Optional)</label>
-                <input
-                  type="url"
-                  className="form-input"
-                  placeholder="https://company.com"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                />
-                <div className="form-hint" style={{ color: '#059669' }}>
-                  No website? You can leave this blank and use your WhatsApp number below as your direct store link!
-                </div>
-              </div>
+            <div className="form-group">
+              <label className="form-label">City</label>
+              <input
+                type="text"
+                className="form-input"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
             </div>
 
             <div className="form-group">
@@ -250,29 +241,50 @@ export const BrandProfileEditor = () => {
               />
             </div>
 
-            <h4 style={{ margin: 'var(--space-6) 0 var(--space-4) 0' }}>Commercial Trust & Instant Commerce</h4>
-            <div className="grid-2">
+            <div className="profile-contact-heading">
+              <span><MessageCircle size={18} /></span>
+              <div>
+                <h4>Public contact channels</h4>
+                <p>Add any combination. At least one contact method is required so visitors can reach your business.</p>
+              </div>
+            </div>
+            <div className="grid-2 profile-contact-grid">
               <div className="form-group">
-                <label className="form-label">WhatsApp Business Number</label>
+                <label className="form-label">WhatsApp number or link</label>
                 <input
-                  type="tel"
+                  type="text"
+                  inputMode="tel"
                   className="form-input"
-                  placeholder="+234 801 234 5678"
+                  placeholder="+234 801 234 5678 or https://wa.me/234..."
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                 />
-                <div className="form-hint">Enables direct 1-click WhatsApp customer ordering</div>
+                <div className="form-hint">Enables direct WhatsApp inquiries from your public profile.</div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Direct Phone Hotline</label>
-                <input
-                  type="tel"
-                  className="form-input"
-                  placeholder="+234 1 234 5678"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+                <label className="form-label">Direct phone number</label>
+                <div className="contact-input-icon-wrap">
+                  <Phone size={15} />
+                  <input type="tel" className="form-input" placeholder="+234 1 234 5678" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Public business email</label>
+                <div className="contact-input-icon-wrap">
+                  <Mail size={15} />
+                  <input type="email" className="form-input" placeholder="hello@company.com" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Official website</label>
+                <div className="contact-input-icon-wrap">
+                  <Globe size={15} />
+                  <input type="text" inputMode="url" className="form-input" placeholder="https://company.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </div>
+                <div className="form-hint">Optional when your business uses WhatsApp, phone, or email instead.</div>
               </div>
             </div>
 

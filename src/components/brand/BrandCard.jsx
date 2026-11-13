@@ -6,6 +6,7 @@ import { dataStore } from '../../services/dataStore';
 import { MapPin, Users, UserPlus, Check, MessageCircle, ShoppingBag } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { getSiteOrigin } from '../../lib/site';
+import { createWhatsAppUrl } from '../../lib/contact';
 
 export const BrandCard = ({ brand }) => {
   const { user, currentBrand } = useAuth();
@@ -15,9 +16,12 @@ export const BrandCard = ({ brand }) => {
   );
   const [followerCount, setFollowerCount] = useState(brand.followerCount || 0);
 
-  const cleanPhone = (brand.whatsapp || brand.phone || '').replace(/[^0-9]/g, '');
   const products = brand.products || [];
   const publicProfileUrl = `${getSiteOrigin()}/brand/${brand.slug}`;
+  const whatsappUrl = createWhatsAppUrl(
+    brand.whatsapp,
+    `Hello ${brand.name}, I discovered your business listing on BRANDSCOPE (${publicProfileUrl}) and would like to inquire about your offerings.`
+  );
 
   const handleFollowToggle = async (e) => {
     e.preventDefault();
@@ -119,9 +123,9 @@ export const BrandCard = ({ brand }) => {
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {cleanPhone && (
+            {whatsappUrl && (
               <a
-                href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello ${brand.name}, I discovered your business listing on BRANDSCOPE (${publicProfileUrl}) and would like to inquire about your offerings.`)}`}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={`Chat with ${brand.name} on WhatsApp`}

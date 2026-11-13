@@ -7,8 +7,10 @@ import {
   Clock,
   ExternalLink,
   Globe2,
+  Mail,
   MessageCircle,
   Package,
+  Phone,
   ShieldCheck,
   Truck
 } from 'lucide-react';
@@ -16,6 +18,8 @@ import { dataStore } from '../../services/dataStore';
 import { Seo } from '../../components/common/Seo';
 import { VerificationBadge } from '../../components/common/Badge';
 import { getSiteOrigin } from '../../lib/site';
+import { createPhoneUrl, createWhatsAppUrl } from '../../lib/contact';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 const AVAILABILITY = {
   in_stock: { label: 'Available', schema: 'https://schema.org/InStock' },
@@ -25,10 +29,14 @@ const AVAILABILITY = {
 };
 
 export const ProductDetailPage = () => {
+  useDataStoreVersion();
   const { productId } = useParams();
   const record = dataStore.getProductById(productId);
 
   if (!record) {
+    if (!dataStore.initialized) {
+      return <div className="workspace-loading"><span className="workspace-loading-mark" />Loading this catalog item...</div>;
+    }
     return (
       <div className="container product-not-found">
         <Package size={42} />
@@ -44,8 +52,8 @@ export const ProductDetailPage = () => {
   const canonicalUrl = `${origin}/product/${product.id}`;
   const brandUrl = `${origin}/brand/${brand.slug}`;
   const availability = AVAILABILITY[product.availability] || AVAILABILITY.in_stock;
-  const cleanPhone = (brand.whatsapp || brand.phone || '').replace(/[^0-9]/g, '');
   const whatsappText = `Hello ${brand.name}, I am interested in "${product.title}" ($${Number(product.price || 0).toLocaleString('en-US')} USD) published on BRANDSCOPE: ${canonicalUrl}`;
+  const whatsappUrl = createWhatsAppUrl(brand.whatsapp, whatsappText);
   const specifications = Object.entries(product.specifications || {}).filter(([, value]) => value !== '' && value != null);
 
   const productSchema = {
@@ -135,9 +143,9 @@ export const ProductDetailPage = () => {
             </div>
 
             <div className="product-detail-actions">
-              {cleanPhone && (
+              {whatsappUrl && (
                 <a
-                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappText)}`}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn product-whatsapp-btn"
@@ -149,6 +157,12 @@ export const ProductDetailPage = () => {
                 <a href={brand.website} target="_blank" rel="noopener noreferrer" className="btn btn-outline">
                   Visit brand website <ExternalLink size={15} />
                 </a>
+              )}
+              {brand.phone && (
+                <a href={createPhoneUrl(brand.phone)} className="btn btn-outline"><Phone size={15} /> Call brand</a>
+              )}
+              {brand.contactEmail && (
+                <a href={`mailto:${brand.contactEmail}?subject=${encodeURIComponent(`Inquiry about ${product.title} on BRANDSCOPE`)}`} className="btn btn-outline"><Mail size={15} /> Email brand</a>
               )}
             </div>
           </div>

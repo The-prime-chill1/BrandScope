@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { SelectField } from '../../components/common/SelectField';
 
 export const VerificationPortal = () => {
   const { user, currentBrand, refreshBrand } = useAuth();
@@ -221,16 +222,17 @@ export const VerificationPortal = () => {
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
                   Identity Document Type
                 </label>
-                <select
+                <SelectField
                   value={formData.idType}
-                  onChange={(e) => setFormData({ ...formData, idType: e.target.value })}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.9rem' }}
-                >
-                  <option value="nin">National Identification Number (NIN / National e-ID)</option>
-                  <option value="passport">International Passport</option>
-                  <option value="cac_cert">Certificate of Incorporation</option>
-                  <option value="drivers_license">Driver's License</option>
-                </select>
+                  ariaLabel="Identity document type"
+                  options={[
+                    { value: 'nin', label: 'National Identification Number (NIN / National e-ID)' },
+                    { value: 'passport', label: 'International Passport' },
+                    { value: 'cac_cert', label: 'Certificate of Incorporation' },
+                    { value: 'drivers_license', label: "Driver's License" }
+                  ]}
+                  onChange={(nextValue) => setFormData({ ...formData, idType: nextValue })}
+                />
               </div>
             </div>
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
 import { useToast } from '../../contexts/ToastContext';
 import { AlertTriangle, Send } from 'lucide-react';
+import { SelectField } from '../common/SelectField';
 
 const REPORT_REASONS = [
   { value: 'spam', label: 'Spam, misleading claims, or deceptive links' },
@@ -59,17 +60,12 @@ export const ReportModal = ({ isOpen, onClose, targetType = 'brand', targetId, t
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label className="form-label">Reason for reporting</label>
-          <select
-            className="form-select"
+          <SelectField
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          >
-            {REPORT_REASONS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+            ariaLabel="Reason for reporting"
+            options={REPORT_REASONS}
+            onChange={setReason}
+          />
         </div>
 
         <div className="form-group">

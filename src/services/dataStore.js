@@ -33,6 +33,15 @@ function assertResult(result, label) {
   return result.data || [];
 }
 
+function isMissingRelation(result, relationName) {
+  const message = result?.error?.message || '';
+  return Boolean(result?.error) && (
+    result.error.code === 'PGRST205'
+    || result.error.code === '42P01'
+    || message.includes(`'public.${relationName}'`)
+  );
+}
+
 function asNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -61,11 +70,65 @@ function mapProduct(row) {
   };
 }
 
+function mapNotification(row) {
+  return {
+    id: row.id,
+    recipientUid: row.recipient_id,
+    actorUid: row.actor_id,
+    type: row.type,
+    message: row.message,
+    link: row.link || '',
+    read: row.is_read,
+    createdAt: row.created_at
+  };
+}
+
+function mergeBrandRecord(brand, row, categories) {
+  if (!brand || !row) return brand;
+  const category = categories.find((item) => item.slug === row.category_slug);
+  Object.assign(brand, {
+    ownerUid: row.owner_id,
+    name: row.name,
+    slug: row.slug,
+    brandType: row.brand_type,
+    category: category?.name || row.category_slug,
+    categorySlug: row.category_slug,
+    country: row.country || '',
+    city: row.city || '',
+    whatsapp: row.whatsapp || '',
+    whatsappNumber: row.whatsapp || '',
+    phone: row.phone || '',
+    contactEmail: row.contact_email || '',
+    website: row.website || '',
+    address: row.address || '',
+    deliveryInfo: row.delivery_info || '',
+    responseSpeed: row.response_speed || '',
+    shortDescription: row.short_description || '',
+    fullDescription: row.full_description || '',
+    logoUrl: row.logo_url || '',
+    coverUrl: row.cover_url || '',
+    cacNumber: row.registration_number || '',
+    registrationNumber: row.registration_number || '',
+    verificationStatus: row.verification_status || 'unverified',
+    status: row.status || 'active',
+    socials: row.socials || {},
+    updatedAt: row.updated_at
+  });
+  return brand;
+}
+
 class SupabaseDataStore {
   constructor() {
     this.listeners = new Set();
+    this.version = 0;
     this.initialized = false;
     this.loading = false;
+    this.publicRefreshPromise = null;
+    this.privateRefreshPromise = null;
+    this.privateRefreshUserId = '';
+    this.privateRefreshToken = 0;
+    this.privateLoadedAt = 0;
+    this.ownedBrandRefreshes = new Map();
     this.connectionError = '';
     this.categories = [...DEFAULT_CATEGORIES];
     this.brands = [];
@@ -77,12 +140,15 @@ class SupabaseDataStore {
     this.reports = [];
     this.verificationRequests = [];
     this.auditLogs = [];
+    this.supportInquiries = [];
     this.profile = null;
   }
 
   async initialize() {
-    if (this.initialized || this.loading) return;
+    if (this.initialized) return;
+    if (this.loading) return this.publicRefreshPromise;
     this.loading = true;
+    this.notify();
 
     if (!isSupabaseConfigured) {
       this.initialized = true;
@@ -106,6 +172,16 @@ class SupabaseDataStore {
   }
 
   async refreshPublicData() {
+    if (this.publicRefreshPromise) return this.publicRefreshPromise;
+    this.publicRefreshPromise = this.performPublicDataRefresh();
+    try {
+      return await this.publicRefreshPromise;
+    } finally {
+      this.publicRefreshPromise = null;
+    }
+  }
+
+  async performPublicDataRefresh() {
     const client = requireSupabase();
     const [categoryResult, brandResult, productResult, postResult, commentResult, followResult, likeResult] = await Promise.all([
       client.from('categories').select('*').order('sort_order', { ascending: true }),
@@ -162,6 +238,7 @@ class SupabaseDataStore {
       whatsapp: row.whatsapp || '',
       whatsappNumber: row.whatsapp || '',
       phone: row.phone || '',
+      contactEmail: row.contact_email || '',
       website: row.website || '',
       address: row.address || '',
       deliveryInfo: row.delivery_info || '',
@@ -245,60 +322,93 @@ class SupabaseDataStore {
     this.notify();
   }
 
-  async refreshPrivateData(user) {
+  async refreshPrivateData(user, { force = false } = {}) {
     if (!user || !isSupabaseConfigured) {
+      this.privateRefreshToken += 1;
+      this.privateRefreshPromise = null;
+      this.privateRefreshUserId = '';
+      this.privateLoadedAt = 0;
       this.profile = null;
       this.notifications = [];
       this.reports = [];
       this.verificationRequests = [];
       this.auditLogs = [];
+      this.supportInquiries = [];
       this.notify();
       return;
     }
 
-    const client = requireSupabase();
-    const profileResult = await client.from('profiles').select('*').eq('id', user.uid).maybeSingle();
-    if (profileResult.error) throw profileResult.error;
-    this.profile = profileResult.data;
+    if (this.privateRefreshPromise && this.privateRefreshUserId === user.uid) {
+      return this.privateRefreshPromise;
+    }
+    if (!force && this.privateRefreshUserId === user.uid && Date.now() - this.privateLoadedAt < 5000) {
+      return;
+    }
 
-    const notificationResult = await client
+    const requestToken = ++this.privateRefreshToken;
+    const previousUserId = this.privateRefreshUserId;
+    this.privateRefreshUserId = user.uid;
+    if (previousUserId && previousUserId !== user.uid) {
+      this.notifications = [];
+      this.reports = [];
+      this.verificationRequests = [];
+      this.auditLogs = [];
+      this.supportInquiries = [];
+    }
+
+    const refreshPromise = this.performPrivateDataRefresh(user, requestToken);
+    this.privateRefreshPromise = refreshPromise;
+    try {
+      return await refreshPromise;
+    } finally {
+      if (this.privateRefreshPromise === refreshPromise) this.privateRefreshPromise = null;
+    }
+  }
+
+  async performPrivateDataRefresh(user, requestToken) {
+    const client = requireSupabase();
+    const notificationQuery = client
       .from('notifications')
       .select('*')
       .eq('recipient_id', user.uid)
       .order('created_at', { ascending: false })
       .limit(100);
-    const notifications = assertResult(notificationResult, 'notifications');
-    this.notifications = notifications.map((row) => ({
-      id: row.id,
-      recipientUid: row.recipient_id,
-      actorUid: row.actor_id,
-      type: row.type,
-      message: row.message,
-      link: row.link || '',
-      read: row.is_read,
-      createdAt: row.created_at
-    }));
 
     if (user.role === 'admin') {
-      const [reportResult, verificationResult, auditResult] = await Promise.all([
+      const [notificationResult, reportResult, verificationResult, auditResult, supportResult] = await Promise.all([
+        notificationQuery,
         client.from('reports').select('*').order('created_at', { ascending: false }).limit(250),
         client.from('verification_requests').select('*').order('created_at', { ascending: false }).limit(250),
-        client.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(250)
+        client.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(250),
+        client.from('support_inquiries').select('*').order('created_at', { ascending: false }).limit(500)
       ]);
+      if (requestToken !== this.privateRefreshToken) return;
+      this.notifications = assertResult(notificationResult, 'notifications').map(mapNotification);
       this.reports = assertResult(reportResult, 'reports').map((row) => this.mapReport(row));
       this.verificationRequests = assertResult(verificationResult, 'verification requests').map((row) => this.mapVerificationRequest(row));
       this.auditLogs = assertResult(auditResult, 'audit logs').map((row) => this.mapAuditLog(row));
+      this.supportInquiries = isMissingRelation(supportResult, 'support_inquiries')
+        ? []
+        : assertResult(supportResult, 'support inquiries').map((row) => this.mapSupportInquiry(row));
     } else {
-      const verificationResult = await client
-        .from('verification_requests')
-        .select('*')
-        .eq('submitted_by', user.uid)
-        .order('created_at', { ascending: false });
+      const [notificationResult, verificationResult] = await Promise.all([
+        notificationQuery,
+        client
+          .from('verification_requests')
+          .select('*')
+          .eq('submitted_by', user.uid)
+          .order('created_at', { ascending: false })
+      ]);
+      if (requestToken !== this.privateRefreshToken) return;
+      this.notifications = assertResult(notificationResult, 'notifications').map(mapNotification);
       this.verificationRequests = assertResult(verificationResult, 'verification requests').map((row) => this.mapVerificationRequest(row));
       this.reports = [];
       this.auditLogs = [];
+      this.supportInquiries = [];
     }
 
+    this.profile = { id: user.uid, role: user.role, contact_name: user.name || '' };
+    this.privateLoadedAt = Date.now();
     this.notify();
   }
 
@@ -313,7 +423,41 @@ class SupabaseDataStore {
   }
 
   notify() {
+    this.version += 1;
     this.listeners.forEach((listener) => listener(this));
+  }
+
+  subscribeToNotifications(user, onNotification) {
+    if (!user?.uid || !isSupabaseConfigured) return () => {};
+    const client = requireSupabase();
+    const channel = client
+      .channel(`notifications:${user.uid}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.uid}`
+        },
+        (payload) => {
+          const notification = mapNotification(payload.new);
+          if (!this.notifications.some((item) => item.id === notification.id)) {
+            this.notifications = [notification, ...this.notifications];
+            this.notify();
+          }
+          onNotification?.(notification);
+
+          if (user.role === 'admin' && ['/admin/brands', '/admin/inquiries', '/admin/reports'].includes(notification.link)) {
+            void this.refreshPrivateData(user, { force: true }).catch((error) => {
+              console.warn('[BRANDSCOPE] Live admin queue refresh failed:', error);
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { void client.removeChannel(channel); };
   }
 
   getBrands({ category, country, search, limit = 50 } = {}) {
@@ -355,6 +499,38 @@ class SupabaseDataStore {
     return this.brands.find((brand) => brand.ownerUid === uid) || null;
   }
 
+  async refreshOwnedBrand(userId) {
+    if (this.ownedBrandRefreshes.has(userId)) return this.ownedBrandRefreshes.get(userId);
+    const refreshPromise = (async () => {
+      const client = requireSupabase();
+      const result = await client.from('brands').select('*').eq('owner_id', userId).maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) return null;
+
+      let brand = this.getBrandByOwnerUid(userId);
+      if (!brand) {
+        brand = {
+          id: result.data.id,
+          products: [],
+          followerCount: 0,
+          postCount: 0,
+          joinedDate: result.data.created_at,
+          createdAt: result.data.created_at
+        };
+        this.brands = [brand, ...this.brands];
+      }
+      mergeBrandRecord(brand, result.data, this.categories);
+      this.notify();
+      return brand;
+    })();
+    this.ownedBrandRefreshes.set(userId, refreshPromise);
+    try {
+      return await refreshPromise;
+    } finally {
+      this.ownedBrandRefreshes.delete(userId);
+    }
+  }
+
   getProductById(productId) {
     for (const brand of this.brands) {
       const product = brand.products.find((item) => item.id === productId);
@@ -374,7 +550,8 @@ class SupabaseDataStore {
       country: brandData.country || 'Nigeria',
       city: brandData.city || '',
       whatsapp: brandData.whatsapp || '',
-      phone: brandData.phone || brandData.whatsapp || '',
+      phone: brandData.phone || '',
+      contact_email: brandData.contactEmail || '',
       website: brandData.website || '',
       short_description: brandData.shortDescription || '',
       registration_number: brandData.cacNumber || ''
@@ -390,12 +567,14 @@ class SupabaseDataStore {
     if (!brand) throw new Error('Brand not found.');
     const userId = actorUid || brand.ownerUid;
 
-    const logoUrl = Object.hasOwn(updates, 'logoUrl')
-      ? await uploadPublicMedia(updates.logoUrl, { userId, folder: 'logos' })
-      : undefined;
-    const coverUrl = Object.hasOwn(updates, 'coverUrl')
-      ? await uploadPublicMedia(updates.coverUrl, { userId, folder: 'covers' })
-      : undefined;
+    const [logoUrl, coverUrl] = await Promise.all([
+      Object.hasOwn(updates, 'logoUrl')
+        ? uploadPublicMedia(updates.logoUrl, { userId, folder: 'logos' })
+        : Promise.resolve(undefined),
+      Object.hasOwn(updates, 'coverUrl')
+        ? uploadPublicMedia(updates.coverUrl, { userId, folder: 'covers' })
+        : Promise.resolve(undefined)
+    ]);
 
     const mapping = {
       name: 'name',
@@ -406,6 +585,7 @@ class SupabaseDataStore {
       city: 'city',
       whatsapp: 'whatsapp',
       phone: 'phone',
+      contactEmail: 'contact_email',
       website: 'website',
       address: 'address',
       deliveryInfo: 'delivery_info',
@@ -427,8 +607,9 @@ class SupabaseDataStore {
     const client = requireSupabase();
     const result = await client.from('brands').update(payload).eq('id', brandId).select('*').single();
     if (result.error) throw result.error;
-    await this.refreshPublicData();
-    return this.getBrandById(brandId);
+    mergeBrandRecord(brand, result.data, this.categories);
+    this.notify();
+    return brand;
   }
 
   async createProduct(brandId, productData, userId) {
@@ -683,6 +864,20 @@ class SupabaseDataStore {
     return report;
   }
 
+  async submitSupportInquiry({ inquiryType, name, email, subject, message }, user = null) {
+    const client = requireSupabase();
+    const result = await client.from('support_inquiries').insert({
+      submitted_by: user?.uid || null,
+      inquiry_type: inquiryType || 'general',
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      subject: subject.trim(),
+      message: message.trim()
+    });
+    if (result.error) throw result.error;
+    return true;
+  }
+
   async submitVerificationRequest(brandId, formData, userId) {
     const documentPath = await uploadVerificationDocument(formData.documentUrl, { userId });
     const payload = {
@@ -761,6 +956,24 @@ class SupabaseDataStore {
     };
   }
 
+  mapSupportInquiry(row) {
+    return {
+      id: row.id,
+      submittedBy: row.submitted_by,
+      inquiryType: row.inquiry_type,
+      name: row.name,
+      email: row.email,
+      subject: row.subject,
+      message: row.message,
+      status: row.status,
+      adminNote: row.admin_note || '',
+      assignedTo: row.assigned_to,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      resolvedAt: row.resolved_at
+    };
+  }
+
   getAdminStats() {
     return {
       totalBrands: this.brands.length,
@@ -770,7 +983,9 @@ class SupabaseDataStore {
       totalPosts: this.posts.length,
       totalReports: this.reports.length,
       pendingReports: this.reports.filter((report) => report.status === 'pending').length,
-      pendingVerifications: this.verificationRequests.filter((request) => request.status === 'pending').length
+      pendingVerifications: this.verificationRequests.filter((request) => request.status === 'pending').length,
+      openSupportInquiries: this.supportInquiries.filter((inquiry) => ['new', 'in_progress'].includes(inquiry.status)).length,
+      newSupportInquiries: this.supportInquiries.filter((inquiry) => inquiry.status === 'new').length
     };
   }
 
@@ -778,16 +993,47 @@ class SupabaseDataStore {
     const client = requireSupabase();
     const result = await client.rpc('admin_set_brand_verification', { target_brand_id: brandId, new_status: status });
     if (result.error) throw result.error;
-    await this.refreshPublicData();
-    return this.getBrandById(brandId);
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    const brand = this.getBrandById(brandId);
+    mergeBrandRecord(brand, row, this.categories);
+    this.notify();
+    return brand;
+  }
+
+  async reviewVerificationRequest(requestId, decision, notes = '') {
+    const client = requireSupabase();
+    const result = await client.rpc('admin_review_verification_request', {
+      target_request_id: requestId,
+      decision,
+      notes
+    });
+    if (result.error) throw result.error;
+
+    const reviewed = this.mapVerificationRequest(Array.isArray(result.data) ? result.data[0] : result.data);
+    this.verificationRequests = this.verificationRequests.map((request) => request.id === requestId ? reviewed : request);
+    const brand = this.getBrandById(reviewed.brandId);
+    if (brand) brand.verificationStatus = decision === 'approved' ? 'verified' : 'rejected';
+    this.notify();
+    return reviewed;
+  }
+
+  async getVerificationDocumentUrl(documentPath) {
+    if (!documentPath) throw new Error('No verification document was attached.');
+    const client = requireSupabase();
+    const result = await client.storage.from('verification-documents').createSignedUrl(documentPath, 600);
+    if (result.error) throw result.error;
+    return result.data.signedUrl;
   }
 
   async setBrandStatus(brandId, status) {
     const client = requireSupabase();
     const result = await client.rpc('admin_set_brand_status', { target_brand_id: brandId, new_status: status });
     if (result.error) throw result.error;
-    await this.refreshPublicData();
-    return this.getBrandById(brandId);
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    const brand = this.getBrandById(brandId);
+    mergeBrandRecord(brand, row, this.categories);
+    this.notify();
+    return brand;
   }
 
   async hidePost(postId) {
@@ -808,6 +1054,30 @@ class SupabaseDataStore {
     if (report) report.status = status;
     this.notify();
     return report;
+  }
+
+  async updateSupportInquiry(inquiryId, updates, administratorUid) {
+    const payload = {};
+    if (Object.hasOwn(updates, 'status')) {
+      payload.status = updates.status;
+      payload.resolved_at = ['resolved', 'closed'].includes(updates.status) ? new Date().toISOString() : null;
+      payload.assigned_to = updates.status === 'new' ? null : administratorUid;
+    }
+    if (Object.hasOwn(updates, 'adminNote')) payload.admin_note = updates.adminNote || '';
+
+    const client = requireSupabase();
+    const result = await client
+      .from('support_inquiries')
+      .update(payload)
+      .eq('id', inquiryId)
+      .select('*')
+      .single();
+    if (result.error) throw result.error;
+
+    const inquiry = this.mapSupportInquiry(result.data);
+    this.supportInquiries = this.supportInquiries.map((item) => item.id === inquiryId ? inquiry : item);
+    this.notify();
+    return inquiry;
   }
 }
 

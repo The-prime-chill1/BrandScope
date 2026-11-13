@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { dataStore } from '../../services/dataStore';
 import { Package, Plus, Search, Trash2, Edit3, MessageCircle, Clock, DollarSign, X } from 'lucide-react';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { SelectField } from '../../components/common/SelectField';
+import { createWhatsAppUrl } from '../../lib/contact';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 const EMPTY_PRODUCT = {
   title: '',
@@ -16,6 +19,7 @@ const EMPTY_PRODUCT = {
 };
 
 export const ManageProducts = () => {
+  const storeVersion = useDataStoreVersion();
   const { user, currentBrand, refreshBrand } = useAuth();
   const { addToast } = useToast();
   const [products, setProducts] = useState(currentBrand?.products || []);
@@ -25,7 +29,9 @@ export const ManageProducts = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  if (!currentBrand || !user) return null;
+  useEffect(() => {
+    setProducts(currentBrand?.products || []);
+  }, [currentBrand, storeVersion]);
 
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -33,6 +39,8 @@ export const ManageProducts = () => {
     return products.filter((product) => [product.title, product.description, product.badge]
       .some((value) => value?.toLowerCase().includes(query)));
   }, [products, searchTerm]);
+
+  if (!currentBrand || !user) return null;
 
   const openEditor = (product = null) => {
     setEditingProduct(product);
@@ -94,7 +102,7 @@ export const ManageProducts = () => {
     }
   };
 
-  const whatsappNumber = (currentBrand.whatsapp || currentBrand.phone || '').replace(/[^0-9]/g, '');
+  const hasWhatsApp = Boolean(createWhatsAppUrl(currentBrand.whatsapp));
 
   return (
     <div className="dashboard-page-wide">
@@ -147,9 +155,9 @@ export const ManageProducts = () => {
                 <p>{product.description || 'No description added yet.'}</p>
                 {product.leadTime && <span className="catalog-lead"><Clock size={13} /> {product.leadTime}</span>}
                 <div className="catalog-card-actions">
-                  {whatsappNumber && (
+                  {hasWhatsApp && (
                     <a
-                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hello ${currentBrand.name}, I am interested in "${product.title}" listed on BRANDSCOPE: ${window.location.origin}/product/${product.id}`)}`}
+                      href={createWhatsAppUrl(currentBrand.whatsapp, `Hello ${currentBrand.name}, I am interested in "${product.title}" listed on BRANDSCOPE: ${window.location.origin}/product/${product.id}`)}
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-outline btn-sm"
@@ -193,12 +201,17 @@ export const ManageProducts = () => {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Availability</label>
-                  <select className="form-select" value={formData.availability} onChange={(event) => setFormData({ ...formData, availability: event.target.value })}>
-                    <option value="in_stock">Available / in stock</option>
-                    <option value="preorder">Pre-order</option>
-                    <option value="service">Service</option>
-                    <option value="out_of_stock">Out of stock</option>
-                  </select>
+                  <SelectField
+                    value={formData.availability}
+                    ariaLabel="Product availability"
+                    options={[
+                      { value: 'in_stock', label: 'Available / in stock' },
+                      { value: 'preorder', label: 'Pre-order' },
+                      { value: 'service', label: 'Service' },
+                      { value: 'out_of_stock', label: 'Out of stock' }
+                    ]}
+                    onChange={(nextValue) => setFormData({ ...formData, availability: nextValue })}
+                  />
                 </div>
               </div>
               <div className="grid-2">

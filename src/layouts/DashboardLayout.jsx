@@ -1,35 +1,34 @@
-import React from 'react';
-import { Outlet, NavLink, Navigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, NavLink, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Navbar } from '../components/navigation/Navbar';
-import { 
-  LayoutDashboard, 
-  Building, 
+import {
+  LayoutDashboard,
+  Building,
   Package,
-  FileText, 
-  Users, 
-  Bell, 
-  BarChart3, 
+  FileText,
+  Users,
+  Bell,
+  BarChart3,
   ShieldCheck,
   Settings,
-  ExternalLink
+  ExternalLink,
+  Menu,
+  X,
+  LogOut,
+  ChevronRight
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
-  const { user, currentBrand, loading, unreadNotifCount } = useAuth();
+  const { user, currentBrand, loading, brandLoading, unreadNotifCount, logout } = useAuth();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <p>Loading your brand workspace...</p>
-      </div>
-    );
-  }
+  useEffect(() => setMobileNavOpen(false), [location.pathname]);
 
-  // Route protection
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (loading) return <div className="workspace-loading"><span className="workspace-loading-mark" />Loading your brand workspace...</div>;
+  if (!user) return <Navigate to="/login" replace />;
 
   const navItems = [
     { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -40,88 +39,70 @@ export const DashboardLayout = () => {
     { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, badge: unreadNotifCount },
     { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/dashboard/verification', label: 'Verification & Trust', icon: ShieldCheck },
-    { to: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { to: '/dashboard/settings', label: 'Settings', icon: Settings }
   ];
 
+  const activeItem = navItems.find((item) => item.exact
+    ? location.pathname === item.to
+    : location.pathname.startsWith(item.to)) || navItems[0];
+  const ActiveIcon = activeItem.icon;
+
+  const handleLogout = () => {
+    navigate('/', { replace: true });
+    void logout();
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="dashboard-frame">
       <Navbar />
+      <div className="dashboard-mobile-bar">
+        <button type="button" onClick={() => setMobileNavOpen(true)} aria-label="Open workspace navigation"><Menu size={20} /></button>
+        <div><ActiveIcon size={16} /><span>{activeItem.label}</span></div>
+        <button type="button" onClick={handleLogout} aria-label="Sign out"><LogOut size={19} /></button>
+      </div>
 
       <div className="dashboard-layout">
-        {/* Sidebar */}
-        <aside className="dashboard-sidebar">
+        {mobileNavOpen && <button type="button" className="dashboard-mobile-overlay" aria-label="Close workspace navigation" onClick={() => setMobileNavOpen(false)} />}
+        <aside className={`dashboard-sidebar ${mobileNavOpen ? 'is-open' : ''}`}>
+          <div className="dashboard-drawer-head">
+            <div><span>Brand workspace</span><strong>{currentBrand?.name || user.email}</strong></div>
+            <button type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close workspace navigation"><X size={20} /></button>
+          </div>
+
           {currentBrand && (
-            <div
-              className="dashboard-brand-switcher"
-              style={{
-                padding: 'var(--space-4)',
-                backgroundColor: 'var(--color-bg)',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: 'var(--space-5)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}
-            >
-              {currentBrand.logoUrl ? (
-                <img
-                  src={currentBrand.logoUrl}
-                  alt={currentBrand.name}
-                  style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                />
-              ) : (
-                <span className="dashboard-brand-fallback">{currentBrand.name?.charAt(0)?.toUpperCase() || 'B'}</span>
-              )}
-              <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {currentBrand.name}
-                </div>
-                <Link
-                  to={`/brand/${currentBrand.slug}`}
-                  style={{ fontSize: '0.75rem', color: 'var(--color-blue)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                >
-                  <span>View Public Page</span>
-                  <ExternalLink size={10} />
-                </Link>
+            <div className="dashboard-brand-switcher">
+              {currentBrand.logoUrl ? <img src={currentBrand.logoUrl} alt="" /> : <span className="dashboard-brand-fallback">{currentBrand.name?.charAt(0)?.toUpperCase() || 'B'}</span>}
+              <div>
+                <strong>{currentBrand.name}</strong>
+                <Link to={`/brand/${currentBrand.slug}`}>View public page <ExternalLink size={11} /></Link>
               </div>
             </div>
           )}
 
-          <nav className="dashboard-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <span className="dashboard-nav-caption">Manage your presence</span>
+          <nav className="dashboard-sidebar-nav">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.exact}
-                  className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Icon size={18} />
-                  <span className="dashboard-nav-label" style={{ flex: 1 }}>{item.label}</span>
-                  {item.badge > 0 && (
-                    <span
-                      style={{
-                        backgroundColor: 'var(--color-error)',
-                        color: '#fff',
-                        fontSize: '0.7rem',
-                        padding: '1px 6px',
-                        borderRadius: 'var(--radius-full)',
-                        fontWeight: 700
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
+                <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `dashboard-nav-item ${isActive ? 'active' : ''}`}>
+                  <span className="dashboard-nav-icon"><Icon size={18} /></span>
+                  <span className="dashboard-nav-label">{item.label}</span>
+                  {item.badge > 0 ? <span className="dashboard-nav-badge">{item.badge}</span> : <ChevronRight size={14} className="dashboard-nav-chevron" />}
                 </NavLink>
               );
             })}
           </nav>
+
+          <div className="dashboard-sidebar-footer">
+            <div><small>Signed in as</small><strong>{user.email}</strong></div>
+            <button type="button" onClick={handleLogout}><LogOut size={17} /><span>Sign out</span></button>
+          </div>
         </aside>
 
-        {/* Main Content Workspace */}
         <main className="dashboard-main">
-          <Outlet />
+          {brandLoading
+            ? <div className="workspace-loading"><span className="workspace-loading-mark" />Loading your brand profile...</div>
+            : <Outlet />}
         </main>
       </div>
     </div>

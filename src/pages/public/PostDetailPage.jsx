@@ -5,8 +5,10 @@ import { PostCard } from '../../components/posts/PostCard';
 import { Seo } from '../../components/common/Seo';
 import { ArrowLeft, Globe2, SearchCheck } from 'lucide-react';
 import { getSiteOrigin } from '../../lib/site';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 
 export const PostDetailPage = () => {
+  useDataStoreVersion();
   const { postId } = useParams();
   const post = dataStore.getPostById(postId);
   const origin = getSiteOrigin();
@@ -47,6 +49,9 @@ export const PostDetailPage = () => {
   }, [origin, post]);
 
   if (!post) {
+    if (!dataStore.initialized) {
+      return <div className="workspace-loading"><span className="workspace-loading-mark" />Loading this brand update...</div>;
+    }
     return (
       <div className="container" style={{ padding: 'var(--space-20) 0', textAlign: 'center' }}>
         <h2>Post not found</h2>

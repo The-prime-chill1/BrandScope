@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { dataStore } from '../../services/dataStore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,6 +11,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Seo } from '../../components/common/Seo';
 import { useToast } from '../../contexts/ToastContext';
 import { getSiteOrigin } from '../../lib/site';
+import { createPhoneUrl, createWhatsAppUrl } from '../../lib/contact';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 import { 
   Globe, 
   MapPin, 
@@ -27,6 +29,7 @@ import {
   ShoppingBag,
   MessageCircle,
   Phone,
+  Mail,
   ShieldCheck,
   Clock,
   Truck,
@@ -36,6 +39,7 @@ import {
 } from 'lucide-react';
 
 export const BrandProfilePage = () => {
+  const storeVersion = useDataStoreVersion();
   const { slug } = useParams();
   const { user, currentBrand } = useAuth();
   const { addToast } = useToast();
@@ -53,6 +57,13 @@ export const BrandProfilePage = () => {
   const [posts, setPosts] = useState(brand ? dataStore.getPosts({ brandId: brand.id }) : []);
   const origin = getSiteOrigin();
 
+  useEffect(() => {
+    if (!brand) return;
+    setFollowing(Boolean(user && dataStore.isFollowing(brand.id, user.uid)));
+    setFollowerCount(brand.followerCount || 0);
+    setPosts(dataStore.getPosts({ brandId: brand.id }));
+  }, [brand, storeVersion, user]);
+
   const organizationSchema = useMemo(() => brand ? {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -66,11 +77,21 @@ export const BrandProfilePage = () => {
       addressLocality: brand.city || undefined,
       addressCountry: brand.country || undefined
     } : undefined,
-    sameAs: [brand.website, ...Object.values(brand.socials || {})].filter(Boolean),
+    email: brand.contactEmail || undefined,
+    sameAs: [brand.website, brand.whatsapp, ...Object.values(brand.socials || {})].filter(Boolean),
+    contactPoint: (brand.contactEmail || brand.phone || brand.whatsapp) ? {
+      '@type': 'ContactPoint',
+      email: brand.contactEmail || undefined,
+      telephone: brand.phone || undefined,
+      contactType: 'customer service'
+    } : undefined,
     parentOrganization: { '@type': 'Organization', name: 'BRANDSCOPE', url: origin }
-  } : null, [brand, origin]);
+  } : null, [brand, origin, storeVersion]);
 
   if (!brand) {
+    if (!dataStore.initialized) {
+      return <div className="workspace-loading"><span className="workspace-loading-mark" />Loading this brand profile...</div>;
+    }
     return (
       <div className="container" style={{ padding: 'var(--space-20) 0', textAlign: 'center' }}>
         <h2>Brand Profile Not Found</h2>
@@ -86,7 +107,7 @@ export const BrandProfilePage = () => {
 
   const isOwner = user && user.uid === brand.ownerUid;
   const products = brand.products || [];
-  const cleanPhone = (brand.whatsapp || brand.phone || '').replace(/[^0-9]/g, '');
+  const hasWhatsApp = Boolean(createWhatsAppUrl(brand.whatsapp));
 
   const filteredProducts = products.filter((p) =>
     p.title.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -133,7 +154,7 @@ export const BrandProfilePage = () => {
     const text = productTitle
       ? `Hello ${brand.name}, I am inquiring about "${productTitle}" ($${Number(productPrice || 0).toLocaleString()} USD) seen on BRANDSCOPE: ${origin}/brand/${brand.slug}`
       : `Hello ${brand.name}, I found your business profile on BRANDSCOPE (${origin}/brand/${brand.slug}) and would like to make an inquiry.`;
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    return createWhatsAppUrl(brand.whatsapp, text);
   };
 
   return (
@@ -284,7 +305,7 @@ export const BrandProfilePage = () => {
                       <span>{brand.website.replace(/^https?:\/\//, '')}</span>
                       <ExternalLink size={11} />
                     </a>
-                  ) : cleanPhone ? (
+                  ) : hasWhatsApp ? (
                     <span
                       style={{
                         display: 'inline-flex',
@@ -325,7 +346,7 @@ export const BrandProfilePage = () => {
             {/* Right: Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {/* WhatsApp Instant Commercial Inquiry (ShopSharp Pattern) */}
-              {cleanPhone && (
+              {hasWhatsApp && (
                 <a
                   href={createWhatsAppInquiry()}
                   target="_blank"
@@ -586,7 +607,7 @@ export const BrandProfilePage = () => {
                       )}
 
                       {/* Instant WhatsApp Order CTA */}
-                      {cleanPhone ? (
+                      {hasWhatsApp ? (
                         <a
                           href={createWhatsAppInquiry(p.title, p.price)}
                           target="_blank"
@@ -672,7 +693,7 @@ export const BrandProfilePage = () => {
                       <a href={brand.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-blue)', wordBreak: 'break-all' }}>
                         {brand.website}
                       </a>
-                    ) : cleanPhone ? (
+                    ) : hasWhatsApp ? (
                       <a
                         href={createWhatsAppInquiry()}
                         target="_blank"
@@ -719,14 +740,14 @@ export const BrandProfilePage = () => {
                 {brand.phone && (
                   <div>
                     <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>Direct Phone Hotline</span>
-                    <a href={`tel:${brand.phone}`} style={{ color: 'var(--color-blue)', fontWeight: 600 }}>{brand.phone}</a>
+                    <a href={createPhoneUrl(brand.phone)} style={{ color: 'var(--color-blue)', fontWeight: 600 }}>{brand.phone}</a>
                   </div>
                 )}
 
-                {brand.ownerEmail && (
+                {brand.contactEmail && (
                   <div>
                     <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block' }}>Business Inquiries</span>
-                    <a href={`mailto:${brand.ownerEmail}`} style={{ color: 'var(--color-blue)' }}>{brand.ownerEmail}</a>
+                    <a href={`mailto:${brand.contactEmail}`} style={{ color: 'var(--color-blue)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Mail size={13} /> {brand.contactEmail}</a>
                   </div>
                 )}
 
@@ -738,7 +759,7 @@ export const BrandProfilePage = () => {
                 )}
               </div>
 
-              {cleanPhone && (
+              {hasWhatsApp && (
                 <div style={{ marginTop: '20px' }}>
                   <a
                     href={createWhatsAppInquiry()}

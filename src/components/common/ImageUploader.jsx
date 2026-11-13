@@ -8,7 +8,8 @@ export const ImageUploader = ({
   hint = 'Supports JPG, PNG, WEBP from your phone photo library or computer files',
   aspectRatio = '16/9',
   maxDimension = 1200,
-  quality = 0.85
+  quality = 0.85,
+  allowUrl = false
 }) => {
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
@@ -128,7 +129,7 @@ export const ImageUploader = ({
           {label}
         </label>
 
-        <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem' }}>
+        {allowUrl && <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem' }}>
           <button
             type="button"
             onClick={() => setMode('device')}
@@ -170,7 +171,7 @@ export const ImageUploader = ({
             <Link2 size={12} />
             <span>Web URL</span>
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Hidden Native File Input */}

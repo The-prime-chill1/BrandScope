@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="40" x2="445" y2="475" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123A61"/>
+      <stop offset="1" stop-color="#061526"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(364 132) rotate(132) scale(315)">
+      <stop stop-color="#21C7D9" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#21C7D9" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="70" y="68" width="372" height="382" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#020B14" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <circle cx="256" cy="256" r="166" stroke="#7DD3FC" stroke-opacity=".12" stroke-width="2"/>
+  <circle cx="256" cy="256" r="128" fill="#FFFFFF" fill-opacity=".045"/>
+  <g filter="url(#shadow)" transform="translate(96 96) scale(1.6)">
+    <path d="M100 26C118 27 131 39 141 58C129 69 119 79 112 90C108 82 99 73 89 68C76 62 67 65 63 70C63 65 72 43 90 30C94 27 97 26 100 26Z" fill="#5B87FF"/>
+    <g transform="rotate(90 100 100)"><path d="M100 26C118 27 131 39 141 58C129 69 119 79 112 90C108 82 99 73 89 68C76 62 67 65 63 70C63 65 72 43 90 30C94 27 97 26 100 26Z" fill="#2F6AF3"/></g>
+    <g transform="rotate(180 100 100)"><path d="M100 26C118 27 131 39 141 58C129 69 119 79 112 90C108 82 99 73 89 68C76 62 67 65 63 70C63 65 72 43 90 30C94 27 97 26 100 26Z" fill="#FFFFFF"/></g>
+    <g transform="rotate(270 100 100)"><path d="M100 26C118 27 131 39 141 58C129 69 119 79 112 90C108 82 99 73 89 68C76 62 67 65 63 70C63 65 72 43 90 30C94 27 97 26 100 26Z" fill="#21C7D9"/></g>
+    <circle cx="100" cy="100" r="10" fill="#8CE8F1"/>
+  </g>
+</svg>

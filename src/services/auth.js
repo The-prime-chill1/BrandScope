@@ -1,30 +1,18 @@
 import { isSupabaseConfigured, requireSupabase, supabase } from '../lib/supabase';
+import { isAdministratorEmail } from '../config/admins';
 import { dataStore } from './dataStore';
 
 const PENDING_ONBOARDING_KEY = 'brandscope_pending_onboarding';
-async function loadProfile(userId) {
-  const client = requireSupabase();
-  const { data, error } = await client.from('profiles').select('*').eq('id', userId).maybeSingle();
-  if (error) throw error;
-  return data;
-}
 
-async function normalizeUser(authUser) {
+function normalizeUser(authUser) {
   if (!authUser) return null;
-  let profile = null;
-  try {
-    profile = await loadProfile(authUser.id);
-  } catch (error) {
-    console.warn('[BRANDSCOPE] Profile role could not be loaded yet:', error);
-  }
-
   const email = authUser.email || '';
   return {
     id: authUser.id,
     uid: authUser.id,
     email,
-    name: profile?.contact_name || authUser.user_metadata?.contact_name || email.split('@')[0],
-    role: profile?.role || 'brand_owner',
+    name: authUser.user_metadata?.contact_name || email.split('@')[0],
+    role: isAdministratorEmail(email) ? 'admin' : 'brand_owner',
     emailVerified: Boolean(authUser.email_confirmed_at),
     createdAt: authUser.created_at
   };
@@ -54,15 +42,15 @@ function getPendingOnboarding(email) {
 }
 
 async function completeOnboardingMedia(user, brandDetails) {
-  await dataStore.refreshPublicData();
-  const brand = dataStore.getBrandByOwnerUid(user.uid);
+  const brand = await dataStore.refreshOwnedBrand(user.uid);
   if (!brand) return;
 
-  const mediaUpdates = {};
-  if (brandDetails.logoUrl) mediaUpdates.logoUrl = brandDetails.logoUrl;
-  if (brandDetails.coverUrl) mediaUpdates.coverUrl = brandDetails.coverUrl;
-  if (Object.keys(mediaUpdates).length) {
-    await dataStore.updateBrand(brand.id, mediaUpdates, user.uid);
+  const onboardingUpdates = {};
+  if (brandDetails.logoUrl) onboardingUpdates.logoUrl = brandDetails.logoUrl;
+  if (brandDetails.coverUrl) onboardingUpdates.coverUrl = brandDetails.coverUrl;
+  if (brandDetails.contactEmail) onboardingUpdates.contactEmail = brandDetails.contactEmail;
+  if (Object.keys(onboardingUpdates).length) {
+    await dataStore.updateBrand(brand.id, onboardingUpdates, user.uid);
   }
 
   if (brandDetails.brandType === 'enterprise' || brandDetails.brandType === 'corporate') {
@@ -93,14 +81,20 @@ export const authService = {
 
   async getCurrentUser() {
     if (!supabase) return null;
-    const { data, error } = await supabase.auth.getUser();
+    // Browser session restoration is local. RLS still validates the JWT on
+    // every protected database request, so startup does not need an extra Auth
+    // server round trip before rendering the workspace.
+    const { data, error } = await supabase.auth.getSession();
     if (error) {
       if (error.name === 'AuthSessionMissingError') return null;
       throw error;
     }
-    if (!data.user) return null;
-    const user = await normalizeUser(data.user);
-    await finalizePendingOnboarding(user);
+    const authUser = data.session?.user;
+    if (!authUser) return null;
+    const user = normalizeUser(authUser);
+    void finalizePendingOnboarding(user).catch((onboardingError) => {
+      console.warn('[BRANDSCOPE] Pending brand media could not finish in the background:', onboardingError);
+    });
     return user;
   },
 
@@ -120,9 +114,10 @@ export const authService = {
       password
     });
     if (error) throw error;
-    const user = await normalizeUser(data.user);
-    await finalizePendingOnboarding(user);
-    await dataStore.refreshAll(user);
+    const user = normalizeUser(data.user);
+    void finalizePendingOnboarding(user).catch((onboardingError) => {
+      console.warn('[BRANDSCOPE] Pending brand media could not finish in the background:', onboardingError);
+    });
     return user;
   },
 
@@ -131,10 +126,6 @@ export const authService = {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedSlug = brandDetails.slug.trim().toLowerCase();
     localStorage.setItem('brandscope_remember_session', remember ? 'true' : 'false');
-
-    const slugResult = await client.from('brands').select('id').eq('slug', normalizedSlug).maybeSingle();
-    if (slugResult.error) throw slugResult.error;
-    if (slugResult.data) throw new Error('That brand URL is already in use. Please choose another slug.');
 
     const { data, error } = await client.auth.signUp({
       email: normalizedEmail,
@@ -150,7 +141,8 @@ export const authService = {
           country: brandDetails.country || 'Nigeria',
           city: brandDetails.city || '',
           whatsapp: brandDetails.whatsapp || '',
-          phone: brandDetails.phone || brandDetails.whatsapp || '',
+          phone: brandDetails.phone || '',
+          contact_email: brandDetails.contactEmail || '',
           website: brandDetails.website || '',
           short_description: brandDetails.shortDescription || '',
           registration_number: brandDetails.cacNumber || ''
@@ -160,20 +152,24 @@ export const authService = {
     if (error) throw error;
     if (!data.user) throw new Error('Supabase did not return a user account. Please try again.');
 
-    const user = await normalizeUser(data.user);
+    const user = normalizeUser(data.user);
     if (!data.session) {
       savePendingOnboarding(normalizedEmail, brandDetails);
       return { ...user, requiresEmailConfirmation: true };
     }
 
-    await completeOnboardingMedia(user, brandDetails);
-    await dataStore.refreshAll(user);
-    return user;
+    // The account and database brand are already created transactionally by
+    // Supabase. Uploading optional images must not hold the user on the signup
+    // screen, so it continues after navigation.
+    const onboardingTask = completeOnboardingMedia(user, brandDetails);
+    return { ...user, onboardingTask };
   },
 
   async logout() {
     if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
+    // Local scope removes the browser session before the revocation request,
+    // so the UI can leave the protected workspace immediately.
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw error;
     localStorage.removeItem('brandscope_remember_session');
   },

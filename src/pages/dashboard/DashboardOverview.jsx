@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { dataStore } from '../../services/dataStore';
+import { useDataStoreVersion } from '../../hooks/useDataStoreVersion';
 import { VerificationBadge } from '../../components/common/Badge';
 import { 
   Users, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const DashboardOverview = () => {
+  useDataStoreVersion();
   const { user, currentBrand } = useAuth();
 
   if (!currentBrand) {

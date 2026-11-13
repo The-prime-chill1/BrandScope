@@ -1,265 +1,328 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  CircleHelp,
+  Clock3,
+  Compass,
+  ExternalLink,
+  FileCheck2,
+  Globe2,
+  Handshake,
+  LifeBuoy,
+  LockKeyhole,
+  Mail,
+  Network,
+  Scale,
+  Send,
+  ShieldCheck,
+} from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-import { ShieldCheck, Mail, Globe, Send, CheckCircle2, ExternalLink } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Seo } from '../../components/common/Seo';
+import { SelectField } from '../../components/common/SelectField';
+import { dataStore } from '../../services/dataStore';
 
 export const AboutPage = () => (
-  <div style={{ paddingBottom: 'var(--space-16)' }}>
-    <section style={{ backgroundColor: 'var(--color-navy)', color: '#FFFFFF', padding: 'var(--space-16) 0' }}>
-      <div className="container" style={{ maxWidth: '780px', textAlign: 'center' }}>
-        <h1 style={{ color: '#FFFFFF', fontSize: '2.8rem', marginBottom: '16px' }}>About BRANDSCOPE</h1>
-        <p style={{ color: '#CBD5E1', fontSize: '1.2rem', lineHeight: 1.6 }}>
-          Where Brands Get Discovered. Built to eliminate obscurity for high-performing companies, commercial startups, and visionary makers.
-        </p>
+  <main className="public-page about-page">
+    <Seo
+      title="About BRANDSCOPE"
+      description="BRANDSCOPE is a public discovery network built exclusively for businesses, brands, startups, makers, and companies."
+      canonicalPath="/about"
+    />
+
+    <section className="public-hero public-hero--about">
+      <div className="container public-hero-layout">
+        <div className="public-hero-content">
+          <span className="public-hero-kicker"><Compass size={14} /> Our reason for building</span>
+          <h1>A clearer internet for discovering real businesses.</h1>
+          <p>BRANDSCOPE gives brands a credible public home—and gives everyone else a direct way to find, understand, and contact them.</p>
+          <div className="public-hero-actions">
+            <Link to="/discover" className="btn btn-primary">Explore brands <ArrowRight size={16} /></Link>
+            <Link to="/signup" className="btn btn-outline-light">Create a brand profile</Link>
+          </div>
+        </div>
+        <div className="about-hero-card">
+          <span><ShieldCheck size={20} /></span>
+          <small>BRANDSCOPE principle</small>
+          <strong>Visitors browse freely. Businesses publish authentically.</strong>
+          <p>No consumer posting accounts. No anonymous marketplace listings. Commercial identity comes first.</p>
+        </div>
       </div>
     </section>
 
-    <div className="container" style={{ maxWidth: '820px', marginTop: 'var(--space-12)' }}>
-      <div className="card" style={{ padding: 'var(--space-10)', marginBottom: 'var(--space-8)' }}>
-        <h2 style={{ marginBottom: 'var(--space-4)' }}>Our Core Mission</h2>
-        <p style={{ fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 'var(--space-6)' }}>
-          Most social networks are optimized for individual influencers, casual entertainment, or ephemeral virality. Small-to-medium businesses and enterprise innovators are often lost behind algorithm changes and paywalled consumer noise.
-        </p>
-        <p style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
-          BRANDSCOPE was created as a dedicated, business-only network. On BRANDSCOPE, every profile represents a commercial entity. Visitors can freely discover products, inspect verified company milestones, and build lasting B2B partnerships.
-        </p>
+    <section className="public-section about-story-section">
+      <div className="container about-story-grid">
+        <article className="about-story-copy">
+          <span className="section-eyebrow">The problem</span>
+          <h2>Good businesses are too often difficult to find and harder to trust.</h2>
+          <p>Most social platforms are optimized for personalities, entertainment, and short-lived attention. Business profiles compete with unrelated noise, while small brands often lack the time or budget to build a polished website.</p>
+          <p>BRANDSCOPE creates a dedicated commercial layer: one place for a business identity, catalog, official updates, verification status, and direct customer contact.</p>
+        </article>
+        <aside className="about-story-stat-card">
+          <div><Globe2 size={18} /><span><strong>Public by design</strong><small>Visitors never need an account to browse.</small></span></div>
+          <div><Building2 size={18} /><span><strong>Business-only membership</strong><small>Publishing belongs to brands and companies.</small></span></div>
+          <div><Network size={18} /><span><strong>Direct connection</strong><small>WhatsApp, websites, and storefronts remain one click away.</small></span></div>
+        </aside>
       </div>
+    </section>
 
-      <div className="card" style={{ padding: 'var(--space-10)', marginBottom: 'var(--space-8)', backgroundColor: '#F8FAFC' }}>
-        <h3 style={{ marginBottom: 'var(--space-3)' }}>Technology Partner & Credit</h3>
-        <p style={{ lineHeight: 1.6, marginBottom: 'var(--space-4)' }}>
-          BRANDSCOPE is architected, built, and powered by <strong>CHILL TECH LTD</strong>, an enterprise software engineering and technology consulting company.
-        </p>
-        <p style={{ lineHeight: 1.6, marginBottom: 'var(--space-4)' }}>
-          CHILL TECH LTD provides cloud infrastructure, security audit compliance, and scalable platform engineering for BRANDSCOPE.
-        </p>
-        <a
-          href="https://chilltechltd.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-outline btn-sm"
-          style={{ gap: '6px' }}
-        >
-          <span>Visit CHILL TECH LTD</span>
-          <ExternalLink size={14} />
-        </a>
+    <section className="public-section about-values-section">
+      <div className="container">
+        <div className="public-section-heading">
+          <div>
+            <span className="section-eyebrow">What guides the platform</span>
+            <h2>Discovery with commercial integrity.</h2>
+          </div>
+        </div>
+        <div className="about-value-grid">
+          <article><span><Compass size={21} /></span><h3>Discoverability</h3><p>Public brand pages are structured to remain useful, shareable, and search-engine friendly.</p></article>
+          <article><span><ShieldCheck size={21} /></span><h3>Authenticity</h3><p>Clear identity, transparent contact channels, and editorial verification help visitors make informed decisions.</p></article>
+          <article><span><Handshake size={21} /></span><h3>Direct commerce</h3><p>BRANDSCOPE introduces people to brands; each brand owns its customer relationship and transaction terms.</p></article>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <section className="container technology-partner-card">
+      <div className="technology-partner-mark"><Network size={26} /></div>
+      <div>
+        <span className="section-eyebrow">Technology partner and credit</span>
+        <h2>Built and powered by CHILL TECH LTD.</h2>
+        <p>CHILL TECH LTD provides the product engineering, cloud architecture, security practices, and ongoing platform development behind BRANDSCOPE.</p>
+      </div>
+      <a href="https://chilltechltd.com" target="_blank" rel="noopener noreferrer" className="btn btn-outline">Visit CHILL TECH LTD <ExternalLink size={15} /></a>
+    </section>
+  </main>
 );
 
 export const ContactPage = () => {
   const { addToast } = useToast();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const { user } = useAuth();
+  const [form, setForm] = useState({ inquiryType: 'general', name: '', email: user?.email || '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-    addToast('Your inquiry has been received. Our team will follow up within 24 hours.', 'success');
+  const updateField = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      await dataStore.submitSupportInquiry(form, user);
+      setSubmitted(true);
+      addToast('Your inquiry is now in the administrator support inbox.', 'success');
+    } catch (error) {
+      addToast(error.message || 'The inquiry could not be submitted. Please try again.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div style={{ paddingBottom: 'var(--space-16)' }}>
-      <section style={{ backgroundColor: 'var(--color-navy)', color: '#FFFFFF', padding: 'var(--space-12) 0' }}>
-        <div className="container" style={{ maxWidth: '640px', textAlign: 'center' }}>
-          <h1 style={{ color: '#FFFFFF', fontSize: '2.5rem', marginBottom: '10px' }}>Contact & Support</h1>
-          <p style={{ color: '#CBD5E1', fontSize: '1.1rem' }}>
-            Reach out to our global team for enterprise partnerships, brand verification assistance, or technical inquiries.
-          </p>
+    <main className="public-page contact-page">
+      <Seo
+        title="Contact and Support"
+        description="Contact BRANDSCOPE for platform support, verification questions, technical help, and business partnerships."
+        canonicalPath="/contact"
+      />
+
+      <section className="public-hero public-hero--compact public-hero--contact">
+        <div className="container public-hero-content public-hero-content--centered">
+          <span className="public-hero-kicker"><LifeBuoy size={14} /> Contact and support</span>
+          <h1>Tell us how we can help.</h1>
+          <p>Reach the BRANDSCOPE team for account support, verification guidance, platform questions, or commercial partnerships.</p>
         </div>
       </section>
 
-      <div className="container" style={{ maxWidth: '720px', marginTop: 'var(--space-10)' }}>
-        <div className="card" style={{ padding: 'var(--space-8)' }}>
-          {submitted ? (
-            <div style={{ textAlign: 'center', padding: 'var(--space-8) 0' }}>
-              <CheckCircle2 size={48} color="#16845B" style={{ margin: '0 auto 16px auto' }} />
-              <h3>Message Sent Successfully</h3>
-              <p style={{ marginTop: '8px' }}>
-                Thank you for contacting BRANDSCOPE. A representative will contact you at <strong>{email}</strong> shortly.
-              </p>
+      <section className="public-section contact-content-section">
+        <div className="container contact-layout">
+          <aside className="contact-info-panel">
+            <span className="section-eyebrow section-eyebrow--light">Support desk</span>
+            <h2>Send the right context and we will route it correctly.</h2>
+            <p>Include your brand name, registered email, and any relevant page link so the team can investigate efficiently.</p>
+            <div className="contact-info-list">
+              <div><span><Clock3 size={17} /></span><div><strong>Response target</strong><small>Within one business day</small></div></div>
+              <div><span><ShieldCheck size={17} /></span><div><strong>Verification help</strong><small>Document and review guidance</small></div></div>
+              <div><span><Mail size={17} /></span><div><strong>Platform inquiries</strong><small>Accounts, listings, and partnerships</small></div></div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Your Name</label>
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder="e.g. Samuel Adebayo"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+            <p className="contact-info-note">For reports about a specific profile or post, use the Report control on that content so it reaches the moderation queue with the correct reference.</p>
+            <Link to="/faq" className="contact-faq-link"><CircleHelp size={16} /> Check frequently asked questions <ArrowRight size={14} /></Link>
+          </aside>
 
-              <div className="form-group">
-                <label className="form-label">Business Email</label>
-                <input
-                  type="email"
-                  required
-                  className="form-input"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+          <div className="contact-form-card">
+            {submitted ? (
+              <div className="contact-success-state">
+                <span><CheckCircle2 size={28} /></span>
+                <h2>Message received</h2>
+                <p>Thank you, {form.name}. A BRANDSCOPE representative will follow up at <strong>{form.email}</strong>.</p>
+                <button type="button" className="btn btn-outline" onClick={() => setSubmitted(false)}>Send another message</button>
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Subject</label>
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder="Partnership, verification request, or support inquiry"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Message</label>
-                <textarea
-                  required
-                  rows={4}
-                  className="form-textarea"
-                  placeholder="How can our support team assist your brand?"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-block" style={{ gap: '6px' }}>
-                <Send size={16} />
-                <span>Send Message</span>
-              </button>
-            </form>
-          )}
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="contact-form-heading">
+                  <span className="section-eyebrow">New inquiry</span>
+                  <h2>Contact BRANDSCOPE</h2>
+                  <p>All fields are required.</p>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-type">What do you need help with?</label>
+                  <SelectField
+                    id="contact-type"
+                    value={form.inquiryType}
+                    ariaLabel="Inquiry type"
+                    options={[
+                      { value: 'general', label: 'General platform question' },
+                      { value: 'account', label: 'Account or sign-in help' },
+                      { value: 'verification', label: 'Business verification' },
+                      { value: 'technical', label: 'Technical issue' },
+                      { value: 'partnership', label: 'Partnership or media inquiry' },
+                      { value: 'report', label: 'Safety or abuse concern' }
+                    ]}
+                    onChange={(nextValue) => updateField('inquiryType', nextValue)}
+                  />
+                </div>
+                <div className="contact-form-grid">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="contact-name">Your name</label>
+                    <input id="contact-name" type="text" required className="form-input" placeholder="Your full name" value={form.name} onChange={(event) => updateField('name', event.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="contact-email">Business email</label>
+                    <input id="contact-email" type="email" required className="form-input" placeholder="name@company.com" value={form.email} onChange={(event) => updateField('email', event.target.value)} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-subject">Subject</label>
+                  <input id="contact-subject" type="text" required className="form-input" placeholder="Account, verification, support, or partnership" value={form.subject} onChange={(event) => updateField('subject', event.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="contact-message">Message</label>
+                  <textarea id="contact-message" required rows={6} className="form-textarea" placeholder="Describe what you need help with and include any relevant brand or page link." value={form.message} onChange={(event) => updateField('message', event.target.value)} />
+                </div>
+                <button type="submit" disabled={submitting} className="btn btn-primary btn-block contact-submit-button"><Send size={16} /> {submitting ? 'Sending to support...' : 'Send inquiry'}</button>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 
+const LegalPageShell = ({ title, description, updated, icon: Icon, canonicalPath, children }) => (
+  <main className="public-page legal-page">
+    <Seo title={title} description={description} canonicalPath={canonicalPath} />
+    <section className="legal-hero">
+      <div className="container legal-hero-inner">
+        <span className="legal-hero-icon"><Icon size={23} /></span>
+        <div>
+          <span className="public-hero-kicker">BRANDSCOPE policy</span>
+          <h1>{title}</h1>
+          <p>{description}</p>
+          <small>Last updated: {updated}</small>
+        </div>
+      </div>
+    </section>
+    <section className="legal-content-section">
+      <div className="container legal-layout">
+        <nav className="legal-side-nav" aria-label="Legal pages">
+          <span>Policy library</span>
+          <Link to="/privacy" className={canonicalPath === '/privacy' ? 'active' : ''}>Privacy policy</Link>
+          <Link to="/terms" className={canonicalPath === '/terms' ? 'active' : ''}>Terms of service</Link>
+          <Link to="/guidelines" className={canonicalPath === '/guidelines' ? 'active' : ''}>Community guidelines</Link>
+          <Link to="/contact">Contact support</Link>
+        </nav>
+        <article className="legal-document">{children}</article>
+      </div>
+    </section>
+  </main>
+);
+
+const LegalSection = ({ number, title, children }) => (
+  <section className="legal-section">
+    {number && <span>{number}</span>}
+    <div><h2>{title}</h2>{children}</div>
+  </section>
+);
+
 export const PrivacyPage = () => (
-  <div className="container" style={{ maxWidth: '800px', padding: 'var(--space-12) var(--space-4)' }}>
-    <h1 style={{ marginBottom: 'var(--space-4)' }}>Privacy Policy</h1>
-    <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-8)' }}>Last updated: November 2026</p>
-
-    <div className="card" style={{ padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      <div>
-        <h3>1. Commercial Identity Data</h3>
-        <p style={{ marginTop: '6px' }}>
-          BRANDSCOPE collects commercial data (business names, official logos, registered categories, contact links, and business descriptions) to establish public business listings. We do not sell personal browsing history to third-party data brokers.
-        </p>
-      </div>
-
-      <div>
-        <h3>2. Third-Party Brand Interactions & Data Sharing</h3>
-        <p style={{ marginTop: '6px' }}>
-          When you click on external contact links, WhatsApp numbers, email addresses, or external websites listed by brands on BRANDSCOPE, you are leaving our platform. Any information, personal data, or payment details you provide directly to those brands is governed strictly by their respective privacy policies, not BRANDSCOPE's.
-        </p>
-      </div>
-
-      <div>
-        <h3>3. Account Security & Media Storage</h3>
-        <p style={{ marginTop: '6px' }}>
-          Authentication, business records, and uploaded media are handled through Supabase. Access is protected with database row-level security, scoped storage policies, and account sessions. BRANDSCOPE does not process purchases made directly between visitors and listed brands.
-        </p>
-      </div>
-
-      <div>
-        <h3>4. Public Visibility & Brand Content</h3>
-        <p style={{ marginTop: '6px' }}>
-          Information published on public brand profiles, catalogs, and brand feed posts is openly indexed and accessible to all visitors without requiring authentication. Private account settings and administrative logs remain strictly protected.
-        </p>
-      </div>
-    </div>
-  </div>
+  <LegalPageShell
+    title="Privacy Policy"
+    description="How BRANDSCOPE handles account data, public business information, uploaded media, and visitor interactions."
+    updated="November 2026"
+    icon={LockKeyhole}
+    canonicalPath="/privacy"
+  >
+    <LegalSection number="01" title="Commercial identity data">
+      <p>BRANDSCOPE collects commercial information—including business names, official logos, registered categories, contact links, and business descriptions—to establish public business listings. We do not sell personal browsing history to third-party data brokers.</p>
+    </LegalSection>
+    <LegalSection number="02" title="Third-party brand interactions">
+      <p>When you open a WhatsApp number, email address, external website, or another contact channel published by a brand, you leave BRANDSCOPE. Information or payment details shared directly with that brand are governed by the brand's own privacy practices.</p>
+    </LegalSection>
+    <LegalSection number="03" title="Account security and media storage">
+      <p>Authentication, business records, and uploaded media are handled through Supabase. Access is protected with database row-level security, scoped storage policies, and account sessions. BRANDSCOPE does not process purchases made directly between visitors and listed brands.</p>
+    </LegalSection>
+    <LegalSection number="04" title="Public visibility and indexing">
+      <p>Information published on public brand profiles, catalogs, and brand feed posts is accessible without authentication and may be indexed by search engines. Private account settings, verification documents, and administrative records remain protected.</p>
+    </LegalSection>
+  </LegalPageShell>
 );
 
 export const TermsPage = () => (
-  <div className="container" style={{ maxWidth: '800px', padding: 'var(--space-12) var(--space-4)' }}>
-    <h1 style={{ marginBottom: 'var(--space-4)' }}>Terms of Service</h1>
-    <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-8)' }}>Last updated: November 2026</p>
-
-    <div className="card" style={{ padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+  <LegalPageShell
+    title="Terms of Service"
+    description="The rules governing business eligibility, publishing, verification, and third-party transactions on BRANDSCOPE."
+    updated="November 2026"
+    icon={Scale}
+    canonicalPath="/terms"
+  >
+    <LegalSection number="01" title="Commercial eligibility">
+      <p>Accounts may only be registered by legitimate commercial brands, incorporated companies, startups, licensed agencies, artisanal shops, and commercial creators. Personal consumer publishing accounts are not supported.</p>
+    </LegalSection>
+    <div className="legal-callout">
+      <span><ShieldCheck size={20} /></span>
       <div>
-        <h3>1. Commercial Eligibility</h3>
-        <p style={{ marginTop: '6px' }}>
-          Accounts on BRANDSCOPE may only be registered by legitimate commercial brands, incorporated companies, startups, licensed agencies, artisanal shops, and commercial creators. Personal consumer accounts are not supported.
-        </p>
-      </div>
-
-      <div style={{ backgroundColor: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', padding: '16px', borderRadius: 'var(--radius-md)' }}>
-        <h3 style={{ color: 'var(--color-warning)' }}>2. Platform Role & Third-Party Transaction Disclaimer (Zero-Liability for Brand Deals)</h3>
-        <p style={{ marginTop: '8px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
-          BRANDSCOPE is strictly a discovery, showcase, and networking platform. BRANDSCOPE is <strong>NOT</strong> a broker, vendor, retail store, payment intermediary, or escrow agent for transactions between visitors/users and listed brands.
-        </p>
-        <p style={{ marginTop: '8px', color: 'var(--color-text-primary)' }}>
-          If you discover a brand on BRANDSCOPE and subsequently communicate, order products, hire services, or send funds to that brand:
-        </p>
-        <ul style={{ paddingLeft: '20px', marginTop: '8px', lineHeight: 1.7, color: 'var(--color-text-secondary)' }}>
-          <li><strong>Independent Contract:</strong> Any purchase, agreement, contract, or transaction is exclusively and solely between you and the respective brand.</li>
-          <li><strong>No Refund Obligation:</strong> BRANDSCOPE has <strong>no business, involvement, or liability</strong> regarding refunds, chargebacks, exchanges, product defects, delays, or undelivered services. <strong>Any refund request is strictly between you and the brand.</strong></li>
-          <li><strong>No Warranty:</strong> BRANDSCOPE does not warrant, inspect, guarantee, or insure third-party goods, services, or fulfillment.</li>
+        <h2>Platform role and third-party transaction disclaimer</h2>
+        <p>BRANDSCOPE is a discovery, showcase, and networking platform. It is not a broker, vendor, retail store, payment intermediary, or escrow agent for transactions between visitors and listed brands.</p>
+        <ul>
+          <li><strong>Independent contract:</strong> Every purchase, agreement, or service engagement is solely between the visitor and the respective brand.</li>
+          <li><strong>No refund obligation:</strong> Refunds, chargebacks, exchanges, defects, delays, and delivery disputes must be resolved directly with the brand.</li>
+          <li><strong>No product warranty:</strong> BRANDSCOPE does not inspect, guarantee, insure, or fulfill third-party goods and services.</li>
         </ul>
       </div>
-
-      <div>
-        <h3>3. Editorial Verification Policy</h3>
-        <p style={{ marginTop: '6px' }}>
-          Verification badges are granted solely through editorial and corporate documentation inspection by authorized BRANDSCOPE administrators. Verification cannot be purchased.
-        </p>
-      </div>
-
-      <div>
-        <h3>4. Member Publishing</h3>
-        <p style={{ marginTop: '6px' }}>
-          Businesses publish and manage their own directory profiles, catalogs, and updates. Each business is responsible for the accuracy and legality of the content and commercial terms it publishes.
-        </p>
-      </div>
-
-      <div>
-        <h3>5. Limitation of Liability</h3>
-        <p style={{ marginTop: '6px' }}>
-          To the maximum extent permitted by applicable law, BRANDSCOPE and CHILL TECH LTD shall not be liable for any direct, indirect, punitive, or consequential damages resulting from communications, contracts, or disputes arising between users and any third-party brands listed on the platform.
-        </p>
-      </div>
     </div>
-  </div>
+    <LegalSection number="03" title="Editorial verification policy">
+      <p>Verification badges are granted through editorial review of corporate documentation by authorized BRANDSCOPE administrators. Verification cannot be purchased.</p>
+    </LegalSection>
+    <LegalSection number="04" title="Member publishing responsibility">
+      <p>Businesses publish and manage their own directory profiles, catalogs, and updates. Each business is responsible for the accuracy, legality, availability, and commercial terms of what it publishes.</p>
+    </LegalSection>
+    <LegalSection number="05" title="Limitation of liability">
+      <p>To the maximum extent permitted by applicable law, BRANDSCOPE and CHILL TECH LTD are not liable for direct, indirect, punitive, or consequential damages resulting from communications, contracts, or disputes between visitors and third-party brands listed on the platform.</p>
+    </LegalSection>
+  </LegalPageShell>
 );
 
 export const GuidelinesPage = () => (
-  <div className="container" style={{ maxWidth: '800px', padding: 'var(--space-12) var(--space-4)' }}>
-    <h1 style={{ marginBottom: 'var(--space-4)' }}>Community & Trust Guidelines</h1>
-    <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-8)' }}>Last updated: October 2026</p>
-
-    <div className="card" style={{ padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      <div>
-        <h3>Zero Tolerance for Impersonation</h3>
-        <p style={{ marginTop: '6px' }}>
-          Attempting to claim or register a brand name, trademark, or executive identity belonging to another organization is strictly prohibited and results in immediate account termination.
-        </p>
-      </div>
-
-      <div>
-        <h3>Authentic Commercial Content & Transparent Terms</h3>
-        <p style={{ marginTop: '6px' }}>
-          Brand posts must represent legitimate business updates, product releases, educational insights, or company news. Brands are required to clearly disclose their own fulfillment, warranty, and refund terms on their respective websites or communication channels.
-        </p>
-      </div>
-
-      <div>
-        <h3>Dispute Resolution</h3>
-        <p style={{ marginTop: '6px' }}>
-          Because BRANDSCOPE does not sell or broker products on behalf of brands, disputes regarding payments, delivery, or refunds must be resolved directly with the brand's customer service channels. Suspected fraudulent brands can be reported via our Abuse Report form for editorial review and potential platform expulsion.
-        </p>
-      </div>
-    </div>
-  </div>
+  <LegalPageShell
+    title="Community and Trust Guidelines"
+    description="The standards that keep BRANDSCOPE useful, authentic, professional, and safe for business discovery."
+    updated="November 2026"
+    icon={FileCheck2}
+    canonicalPath="/guidelines"
+  >
+    <LegalSection number="01" title="Zero tolerance for impersonation">
+      <p>Claiming a brand name, trademark, executive identity, or company record that belongs to another organization is prohibited and may result in immediate account suspension or termination.</p>
+    </LegalSection>
+    <LegalSection number="02" title="Authentic commercial content">
+      <p>Posts should represent legitimate business updates, product releases, educational insights, or company news. Businesses must clearly disclose their own fulfillment, warranty, pricing, and refund terms through their published channels.</p>
+    </LegalSection>
+    <LegalSection number="03" title="Professional conduct">
+      <p>Harassment, hate speech, deceptive claims, malicious links, coordinated spam, and misuse of another organization's intellectual property are not permitted.</p>
+    </LegalSection>
+    <LegalSection number="04" title="Disputes and reporting">
+      <p>Payment, delivery, and refund disputes must be resolved with the brand's customer-service channels. Suspected fraud, impersonation, or harmful content can be submitted through the relevant Report control for editorial review.</p>
+    </LegalSection>
+  </LegalPageShell>
 );

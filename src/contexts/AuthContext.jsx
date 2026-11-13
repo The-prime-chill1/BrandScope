@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { authService } from '../services/auth';
 import { dataStore } from '../services/dataStore';
 import { useToast } from './ToastContext';
+import { showDeviceNotification } from '../services/deviceNotifications';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [currentBrand, setCurrentBrand] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [brandLoading, setBrandLoading] = useState(false);
   const [storeVersion, setStoreVersion] = useState(0);
+  const activeUserRef = useRef(null);
   const { addToast } = useToast();
 
   const syncBrand = useCallback((activeUser) => {
@@ -17,16 +20,37 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const applyAuthenticatedUser = useCallback(async (activeUser) => {
+    const previousUser = activeUserRef.current;
+    activeUserRef.current = activeUser;
     if (!activeUser) {
       setUser(null);
       setCurrentBrand(null);
-      await dataStore.refreshPrivateData(null);
+      setBrandLoading(false);
+      void dataStore.refreshPrivateData(null);
       return null;
     }
 
-    await dataStore.refreshAll(activeUser);
     setUser(activeUser);
-    syncBrand(activeUser);
+    const cachedBrand = dataStore.getBrandByOwnerUid(activeUser.uid);
+    setCurrentBrand(cachedBrand);
+    setBrandLoading(!cachedBrand);
+    if (previousUser?.uid === activeUser.uid && previousUser.role === activeUser.role) return activeUser;
+
+    // The route can render as soon as the local session is known. The small
+    // owned-brand query and private account queues hydrate concurrently.
+    void Promise.allSettled([
+      dataStore.refreshOwnedBrand(activeUser.uid),
+      dataStore.refreshPrivateData(activeUser)
+    ]).then((results) => {
+      if (activeUserRef.current?.uid !== activeUser.uid) return;
+      syncBrand(activeUser);
+      setBrandLoading(false);
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          console.warn('[BRANDSCOPE] Account data could not refresh:', result.reason);
+        }
+      });
+    });
     return activeUser;
   }, [syncBrand]);
 
@@ -65,6 +89,10 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
+          if (activeUserRef.current?.uid === authUser.id && ['SIGNED_IN', 'TOKEN_REFRESHED', 'INITIAL_SESSION'].includes(event)) {
+            return;
+          }
+
           const normalized = await authService.normalizeUser(authUser);
           await applyAuthenticatedUser(normalized);
 
@@ -86,6 +114,16 @@ export const AuthProvider = ({ children }) => {
     };
   }, [applyAuthenticatedUser, syncBrand]);
 
+  useEffect(() => {
+    if (!user) return undefined;
+    return dataStore.subscribeToNotifications(user, (notification) => {
+      addToast(notification.message, 'info', 6000);
+      void showDeviceNotification(notification).catch((error) => {
+        console.warn('[BRANDSCOPE] Device notification could not be displayed:', error);
+      });
+    });
+  }, [user, addToast]);
+
   const login = async (email, password, remember = true) => {
     try {
       const loggedIn = await authService.login(email, password, remember);
@@ -100,14 +138,26 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (payload) => {
     try {
-      const newUser = await authService.register(payload);
-      if (!newUser.requiresEmailConfirmation) {
+      const registration = await authService.register(payload);
+      const { onboardingTask, requiresEmailConfirmation, ...newUser } = registration;
+      if (!requiresEmailConfirmation) {
         await applyAuthenticatedUser(newUser);
         addToast('Your brand profile is now live.', 'success');
+        if (onboardingTask) {
+          void onboardingTask
+            .then(() => {
+              syncBrand(newUser);
+              addToast('Your brand photos finished uploading.', 'success');
+            })
+            .catch((error) => {
+              console.warn('[BRANDSCOPE] Brand media upload did not finish:', error);
+              addToast('Your account is ready, but some photos could not upload. You can add them from Brand Profile.', 'error');
+            });
+        }
       } else {
         addToast('Check your email to confirm your account and publish your brand.', 'success');
       }
-      return newUser;
+      return { ...newUser, requiresEmailConfirmation };
     } catch (error) {
       addToast(error.message || 'Registration failed.', 'error');
       throw error;
@@ -115,14 +165,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authService.logout();
     await applyAuthenticatedUser(null);
-    addToast('Signed out successfully.', 'info');
+    try {
+      await authService.logout();
+      addToast('Signed out successfully.', 'info');
+    } catch (error) {
+      addToast(error.message || 'The local session was cleared, but remote sign-out could not be confirmed.', 'error');
+    }
   };
 
   const refreshBrand = async () => {
     if (!user) return null;
-    await dataStore.refreshAll(user);
     const brand = dataStore.getBrandByOwnerUid(user.uid);
     setCurrentBrand(brand);
     return brand;
@@ -140,6 +193,7 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.role === 'admin',
       isBrandOwner: user?.role === 'brand_owner',
       loading,
+      brandLoading,
       login,
       signup,
       logout,
