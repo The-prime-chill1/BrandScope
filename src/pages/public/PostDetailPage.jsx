@@ -4,11 +4,12 @@ import { dataStore } from '../../services/dataStore';
 import { PostCard } from '../../components/posts/PostCard';
 import { Seo } from '../../components/common/Seo';
 import { ArrowLeft, Globe2, SearchCheck } from 'lucide-react';
+import { getSiteOrigin } from '../../lib/site';
 
 export const PostDetailPage = () => {
   const { postId } = useParams();
   const post = dataStore.getPostById(postId);
-  const origin = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+  const origin = getSiteOrigin();
 
   const seo = useMemo(() => {
     if (!post) return null;

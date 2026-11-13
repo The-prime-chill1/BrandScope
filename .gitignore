@@ -1,5 +1,6 @@
 node_modules/
 dist/
+api/
 
 # Environment files and API credentials must never be committed
 .env*

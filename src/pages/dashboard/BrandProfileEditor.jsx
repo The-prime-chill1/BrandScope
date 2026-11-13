@@ -5,10 +5,12 @@ import { useToast } from '../../contexts/ToastContext';
 import { BrandCard } from '../../components/brand/BrandCard';
 import { Save, AlertCircle, Globe, Building2, Image } from 'lucide-react';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { getSiteHost } from '../../lib/site';
 
 export const BrandProfileEditor = () => {
   const { user, currentBrand, refreshBrand } = useAuth();
   const { addToast } = useToast();
+  const publicSiteHost = getSiteHost();
 
   const [name, setName] = useState(currentBrand?.name || '');
   const [slug, setSlug] = useState(currentBrand?.slug || '');
@@ -150,7 +152,7 @@ export const BrandProfileEditor = () => {
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))}
               />
-              <div className="form-hint">Public link: brandscope.network/brand/{slug}</div>
+              <div className="form-hint">Public link: {publicSiteHost}/brand/{slug}</div>
             </div>
 
             <div className="grid-2">

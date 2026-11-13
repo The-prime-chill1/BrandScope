@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getSiteOrigin } from '../../lib/site';
 
 function upsertMeta(selector, attributes) {
   let element = document.head.querySelector(selector);
@@ -24,7 +25,7 @@ export const Seo = ({
   noIndex = false
 }) => {
   useEffect(() => {
-    const origin = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+    const origin = getSiteOrigin();
     const canonicalUrl = `${origin}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
     const fullTitle = title.includes('BRANDSCOPE') ? title : `${title} | BRANDSCOPE`;
     const resolvedImage = image ? new URL(image, `${origin}/`).href : '';

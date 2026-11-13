@@ -15,6 +15,7 @@ import {
 import { dataStore } from '../../services/dataStore';
 import { Seo } from '../../components/common/Seo';
 import { VerificationBadge } from '../../components/common/Badge';
+import { getSiteOrigin } from '../../lib/site';
 
 const AVAILABILITY = {
   in_stock: { label: 'Available', schema: 'https://schema.org/InStock' },
@@ -39,7 +40,7 @@ export const ProductDetailPage = () => {
   }
 
   const { product, brand } = record;
-  const origin = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+  const origin = getSiteOrigin();
   const canonicalUrl = `${origin}/product/${product.id}`;
   const brandUrl = `${origin}/brand/${brand.slug}`;
   const availability = AVAILABILITY[product.availability] || AVAILABILITY.in_stock;

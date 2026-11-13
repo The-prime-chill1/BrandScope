@@ -5,6 +5,7 @@ import { dataStore } from '../../services/dataStore';
 import { Logo } from '../../components/common/Logo';
 import { BrandCard } from '../../components/brand/BrandCard';
 import { ImageUploader } from '../../components/common/ImageUploader';
+import { getSiteHost } from '../../lib/site';
 import { 
   Building2, 
   User, 
@@ -30,6 +31,7 @@ import {
 export const SignupPage = () => {
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const publicSiteHost = getSiteHost();
 
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
@@ -446,7 +448,7 @@ export const SignupPage = () => {
               <div className="form-group">
                 <label className="form-label">Unique Brand Slug *</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>brandscope.network/brand/</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{publicSiteHost}/brand/</span>
                   <input
                     type="text"
                     required

@@ -10,6 +10,7 @@ import { ReportModal } from '../../components/brand/ReportModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Seo } from '../../components/common/Seo';
 import { useToast } from '../../contexts/ToastContext';
+import { getSiteOrigin } from '../../lib/site';
 import { 
   Globe, 
   MapPin, 
@@ -50,7 +51,7 @@ export const BrandProfilePage = () => {
   );
   const [followerCount, setFollowerCount] = useState(brand ? brand.followerCount || 0 : 0);
   const [posts, setPosts] = useState(brand ? dataStore.getPosts({ brandId: brand.id }) : []);
-  const origin = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
+  const origin = getSiteOrigin();
 
   const organizationSchema = useMemo(() => brand ? {
     '@context': 'https://schema.org',
@@ -130,8 +131,8 @@ export const BrandProfilePage = () => {
 
   const createWhatsAppInquiry = (productTitle, productPrice) => {
     const text = productTitle
-      ? `Hello ${brand.name}, I am inquiring about "${productTitle}" ($${Number(productPrice || 0).toLocaleString()} USD) seen on BRANDSCOPE: https://brandscope.network/brand/${brand.slug}`
-      : `Hello ${brand.name}, I found your business profile on BRANDSCOPE (https://brandscope.network/brand/${brand.slug}) and would like to make an inquiry.`;
+      ? `Hello ${brand.name}, I am inquiring about "${productTitle}" ($${Number(productPrice || 0).toLocaleString()} USD) seen on BRANDSCOPE: ${origin}/brand/${brand.slug}`
+      : `Hello ${brand.name}, I found your business profile on BRANDSCOPE (${origin}/brand/${brand.slug}) and would like to make an inquiry.`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   };
 

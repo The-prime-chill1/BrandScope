@@ -28,7 +28,7 @@ Built and powered by [CHILL TECH LTD](https://chilltechltd.com).
 - Lucide React icons
 - Outfit headings and Inter body typography
 - Supabase Auth, Postgres, Row Level Security, and Storage
-- Vercel hosting and serverless sitemap generation
+- Vercel hosting and build-time sitemap generation
 
 ## Local setup
 
@@ -36,7 +36,6 @@ Requirements: Node.js 20 or later and npm.
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
@@ -102,7 +101,7 @@ Keep the localhost equivalents while developing.
 
 Public brand, post, and product pages include canonical metadata and structured data. Posts visibly state “Originally published on BRANDSCOPE,” and product pages display “Source: BRANDSCOPE.”
 
-`/sitemap.xml` is generated at request time by `api/sitemap.js` and includes active brands, catalog items, published posts, categories, and public platform pages.
+`/sitemap.xml` is generated during each Vercel build by `scripts/generate-sitemap.js`. It includes active brands, catalog items, published posts, categories, and public platform pages available at deployment time. No API route or credential is committed to the repository.
 
 Search engines decide whether and when to index a URL; indexing cannot be guaranteed by an application. After deployment:
 

@@ -31,11 +31,12 @@ describe('BRANDSCOPE production invariants', () => {
       read('vercel.json'),
       read('vite.config.js'),
       ...walk(path.join(root, 'src')).map((file) => fs.readFileSync(file, 'utf8')),
-      ...walk(path.join(root, 'api')).map((file) => fs.readFileSync(file, 'utf8')),
+      ...walk(path.join(root, 'scripts')).map((file) => fs.readFileSync(file, 'utf8')),
       ...walk(path.join(root, 'supabase', 'migrations')).map((file) => fs.readFileSync(file, 'utf8'))
     ].join('\n');
 
     assert.match(gitignore, /^\.env\*$/m);
+    assert.match(gitignore, /^api\/$/m);
     assert.doesNotMatch(committedApplicationText, /sb_(?:publishable|secret)_[A-Za-z0-9_-]{10,}/);
     assert.doesNotMatch(committedApplicationText, /https:\/\/[a-z0-9]{20}\.supabase\.co/i);
     assert.doesNotMatch(committedApplicationText, /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/);
@@ -98,15 +99,19 @@ describe('BRANDSCOPE production invariants', () => {
     assert.doesNotMatch(productPages, /NGN|₦/);
   });
 
-  it('publishes canonical source attribution and a dynamic sitemap', () => {
+  it('publishes canonical source attribution and a build-generated sitemap', () => {
     const post = read('src/pages/public/PostDetailPage.jsx');
     const product = read('src/pages/public/ProductDetailPage.jsx');
-    const sitemap = read('api/sitemap.js');
+    const sitemap = read('scripts/generate-sitemap.js');
+    const robots = read('public/robots.txt');
     assert.match(post, /Originally published on BRANDSCOPE/);
     assert.match(product, /Source: BRANDSCOPE/);
     assert.match(sitemap, /\/brand\//);
     assert.match(sitemap, /\/product\//);
     assert.match(sitemap, /\/post\//);
+    assert.match(sitemap, /xml-stylesheet/);
+    assert.doesNotMatch(sitemap, /Authorization:\s*`Bearer/);
+    assert.match(robots, /https:\/\/brandscope-eight\.vercel\.app\/sitemap\.xml/);
   });
 
   it('ships Vercel SPA rewrites and no placeholder Search Console token', () => {
