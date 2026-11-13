@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/common/Logo';
@@ -23,22 +23,46 @@ import {
   MessageSquareText
 } from 'lucide-react';
 
-const ADMIN_NAV = [
-  { to: '/admin', label: 'Platform Overview', shortLabel: 'Overview', icon: ShieldCheck, exact: true },
-  { to: '/admin/brands', label: 'Brand Registry', shortLabel: 'Brands', icon: Building2 },
-  { to: '/admin/posts', label: 'Content Moderation', shortLabel: 'Content', icon: FileText },
-  { to: '/admin/reports', label: 'Abuse Reports', shortLabel: 'Reports', icon: AlertTriangle },
-  { to: '/admin/inquiries', label: 'Support Inbox', shortLabel: 'Support', icon: MessageSquareText },
-  { to: '/admin/categories', label: 'Categories', shortLabel: 'Categories', icon: Tag },
-  { to: '/admin/users', label: 'Accounts & Roles', shortLabel: 'Accounts', icon: Users },
-  { to: '/admin/audit-logs', label: 'Security Audit Logs', shortLabel: 'Audit logs', icon: ScrollText },
-  { to: '/admin/settings', label: 'Platform Controls', shortLabel: 'Controls', icon: Sliders }
+const ADMIN_NAV_GROUPS = [
+  {
+    label: 'Workspace',
+    items: [
+      { to: '/admin', label: 'Platform Overview', shortLabel: 'Overview', description: 'Health and activity', icon: ShieldCheck, exact: true }
+    ]
+  },
+  {
+    label: 'Directory & content',
+    items: [
+      { to: '/admin/brands', label: 'Brand Registry', shortLabel: 'Brands', description: 'Profiles and verification', icon: Building2, badge: 'verifications' },
+      { to: '/admin/posts', label: 'Content Moderation', shortLabel: 'Content', description: 'Published brand updates', icon: FileText },
+      { to: '/admin/categories', label: 'Categories', shortLabel: 'Categories', description: 'Directory taxonomy', icon: Tag }
+    ]
+  },
+  {
+    label: 'Trust & support',
+    items: [
+      { to: '/admin/reports', label: 'Abuse Reports', shortLabel: 'Reports', description: 'Trust and safety cases', icon: AlertTriangle, badge: 'reports' },
+      { to: '/admin/inquiries', label: 'Support Inbox', shortLabel: 'Support', description: 'Customer enquiries', icon: MessageSquareText, badge: 'support' }
+    ]
+  },
+  {
+    label: 'Governance',
+    items: [
+      { to: '/admin/users', label: 'Accounts & Roles', shortLabel: 'Accounts', description: 'Administrator access', icon: Users },
+      { to: '/admin/audit-logs', label: 'Security Audit Logs', shortLabel: 'Audit logs', description: 'Protected activity', icon: ScrollText },
+      { to: '/admin/settings', label: 'Platform Controls', shortLabel: 'Controls', description: 'System configuration', icon: Sliders }
+    ]
+  }
 ];
+
+const ADMIN_NAV = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 
 export const AdminLayout = () => {
   useDataStoreVersion();
   const { user, isAdmin, loading, logout } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const menuButtonRef = useRef(null);
+  const closeButtonRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,7 +72,17 @@ export const AdminLayout = () => {
     if (!mobileNavOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previousOverflow; };
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      menuButtonRef.current?.focus();
+    };
   }, [mobileNavOpen]);
 
   if (loading) {
@@ -77,6 +111,13 @@ export const AdminLayout = () => {
     ? location.pathname === item.to
     : location.pathname.startsWith(item.to)) || ADMIN_NAV[0];
   const ActiveIcon = activeItem.icon;
+  const pendingCounts = {
+    support: dataStore.supportInquiries.filter((inquiry) => inquiry.status === 'new').length,
+    reports: dataStore.reports.filter((report) => report.status === 'pending').length,
+    verifications: dataStore.verificationRequests.filter((request) => request.status === 'pending').length
+  };
+
+  const getBadgeCount = (item) => item.badge ? pendingCounts[item.badge] : 0;
 
   const handleLogout = () => {
     navigate('/login?mode=admin', { replace: true });
@@ -87,7 +128,15 @@ export const AdminLayout = () => {
     <div className="admin-layout">
       <header className="admin-topbar">
         <div className="admin-topbar-leading">
-          <button type="button" className="admin-menu-btn" onClick={() => setMobileNavOpen(true)} aria-label="Open platform navigation">
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="admin-menu-btn"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open platform navigation"
+            aria-controls="admin-navigation-drawer"
+            aria-expanded={mobileNavOpen}
+          >
             <Menu size={21} />
           </button>
           <Link to="/admin" className="admin-topbar-brand" aria-label="BRANDSCOPE platform operations">
@@ -96,7 +145,10 @@ export const AdminLayout = () => {
           </Link>
         </div>
 
-        <div className="admin-current-section"><ActiveIcon size={15} /><span>{activeItem.shortLabel}</span></div>
+        <div className="admin-current-section">
+          <span className="admin-current-icon"><ActiveIcon size={16} /></span>
+          <span className="admin-current-copy"><small>Admin workspace</small><strong>{activeItem.shortLabel}</strong></span>
+        </div>
 
         <div className="admin-topbar-actions">
           <NotificationPermissionButton compact className="admin-device-alerts" />
@@ -108,26 +160,38 @@ export const AdminLayout = () => {
 
       <div className="admin-shell">
         {mobileNavOpen && <button className="admin-mobile-overlay" type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />}
-        <aside className={`admin-sidebar ${mobileNavOpen ? 'is-open' : ''}`}>
+        <aside id="admin-navigation-drawer" className={`admin-sidebar ${mobileNavOpen ? 'is-open' : ''}`} aria-label="Platform operations navigation">
           <div className="admin-sidebar-mobile-head">
-            <div><span>BRANDSCOPE</span><strong>Platform Operations</strong></div>
-            <button type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"><X size={20} /></button>
+            <div className="admin-drawer-brand">
+              <Logo size={34} showWordmark light />
+              <span><small>Administrator</small><strong>Control centre</strong></span>
+            </div>
+            <button ref={closeButtonRef} type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation"><X size={20} /></button>
           </div>
-          <span className="admin-nav-caption">Operations workspace</span>
-          <nav className="admin-sidebar-nav" aria-label="Platform operations navigation">
-            {ADMIN_NAV.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}>
-                  <span className="admin-nav-icon"><Icon size={18} /></span>
-                  <span>{item.label}</span>
-                  {item.to === '/admin/inquiries' && dataStore.supportInquiries.filter((inquiry) => inquiry.status === 'new').length > 0 && (
-                    <span className="admin-nav-count">{dataStore.supportInquiries.filter((inquiry) => inquiry.status === 'new').length}</span>
-                  )}
-                  <ChevronRight size={14} className="admin-nav-chevron" />
-                </NavLink>
-              );
-            })}
+          <div className="admin-drawer-current">
+            <span><ActiveIcon size={17} /></span>
+            <div><small>Current section</small><strong>{activeItem.label}</strong></div>
+          </div>
+          <nav className="admin-sidebar-nav">
+            {ADMIN_NAV_GROUPS.map((group) => (
+              <div className="admin-nav-group" key={group.label}>
+                <span className="admin-nav-group-label">{group.label}</span>
+                <div className="admin-nav-group-links">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const badgeCount = getBadgeCount(item);
+                    return (
+                      <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}>
+                        <span className="admin-nav-icon"><Icon size={18} /></span>
+                        <span className="admin-nav-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
+                        {badgeCount > 0 && <span className="admin-nav-count">{badgeCount > 99 ? '99+' : badgeCount}</span>}
+                        <ChevronRight size={14} className="admin-nav-chevron" />
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
           <div className="admin-sidebar-footer">
@@ -144,6 +208,13 @@ export const AdminLayout = () => {
 
         <main className="admin-main"><Outlet /></main>
       </div>
+
+      <nav className="admin-mobile-tabs" aria-label="Quick platform navigation">
+        <NavLink to="/admin" end><ShieldCheck size={19} /><span>Overview</span></NavLink>
+        <NavLink to="/admin/brands"><Building2 size={19} /><span>Brands</span>{pendingCounts.verifications > 0 && <b>{pendingCounts.verifications > 9 ? '9+' : pendingCounts.verifications}</b>}</NavLink>
+        <NavLink to="/admin/inquiries"><MessageSquareText size={19} /><span>Support</span>{pendingCounts.support > 0 && <b>{pendingCounts.support > 9 ? '9+' : pendingCounts.support}</b>}</NavLink>
+        <button type="button" className={mobileNavOpen || !['/admin', '/admin/brands', '/admin/inquiries'].includes(location.pathname) ? 'active' : ''} onClick={() => setMobileNavOpen(true)} aria-label="Open all admin sections"><Menu size={19} /><span>More</span></button>
+      </nav>
     </div>
   );
 };

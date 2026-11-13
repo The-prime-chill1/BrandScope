@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, requireSupabase, supabase } from '../lib/supabase';
+import { getSiteOrigin } from '../lib/site';
 import { isAdministratorEmail } from '../config/admins';
 import { dataStore } from './dataStore';
 
@@ -131,7 +132,7 @@ export const authService = {
       email: normalizedEmail,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: `${getSiteOrigin()}/auth/confirm`,
         data: {
           contact_name: contactName.trim(),
           brand_name: brandDetails.name.trim(),
@@ -177,7 +178,7 @@ export const authService = {
   async resetPassword(email) {
     const client = requireSupabase();
     const { error } = await client.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/set-password`
+      redirectTo: `${getSiteOrigin()}/set-password`
     });
     if (error) throw error;
   },

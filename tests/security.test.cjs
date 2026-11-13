@@ -121,6 +121,30 @@ describe('BRANDSCOPE production invariants', () => {
     assert.match(recovery, /SetPasswordPage/);
   });
 
+  it('keeps Supabase email callbacks on the production website', () => {
+    const auth = read('src/services/auth.js');
+    const site = read('src/lib/site.js');
+    const supabaseConfig = read('supabase/config.toml');
+
+    assert.match(site, /https:\/\/brandscope-eight\.vercel\.app/);
+    assert.match(auth, /emailRedirectTo:\s*`\$\{getSiteOrigin\(\)\}\/auth\/confirm`/);
+    assert.match(auth, /redirectTo:\s*`\$\{getSiteOrigin\(\)\}\/set-password`/);
+    assert.doesNotMatch(auth, /window\.location\.origin/);
+    assert.match(supabaseConfig, /site_url\s*=\s*"https:\/\/brandscope-eight\.vercel\.app"/);
+    assert.match(supabaseConfig, /https:\/\/brandscope-eight\.vercel\.app\/set-password/);
+  });
+
+  it('uses a stable app-style mobile admin navigation', () => {
+    const layout = read('src/layouts/AdminLayout.jsx');
+    const styles = read('src/styles/signature.css');
+
+    assert.match(layout, /ADMIN_NAV_GROUPS/);
+    assert.match(layout, /admin-mobile-tabs/);
+    assert.match(layout, /aria-controls="admin-navigation-drawer"/);
+    assert.match(styles, /\.admin-sidebar\s*\{[^}]*flex-direction:\s*column/s);
+    assert.match(styles, /\.admin-mobile-tabs\s*\{[^}]*position:\s*fixed/s);
+  });
+
   it('uses USD throughout the public product experience', () => {
     const productPages = [
       read('src/pages/public/BrandProfilePage.jsx'),
