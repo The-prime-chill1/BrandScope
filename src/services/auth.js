@@ -180,7 +180,16 @@ export const authService = {
     const { error } = await client.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${getSiteOrigin()}/set-password`
     });
-    if (error) throw error;
+    if (error) {
+      if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+        const rateLimitError = new Error('Too many recovery emails were requested. Please wait before trying again and use the newest email in your inbox.');
+        rateLimitError.name = 'AuthRateLimitError';
+        rateLimitError.status = 429;
+        rateLimitError.code = 'over_email_send_rate_limit';
+        throw rateLimitError;
+      }
+      throw error;
+    }
   },
 
   async updatePassword(password) {

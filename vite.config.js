@@ -1,6 +1,26 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { DEFAULT_SITE_URL, sitemapPlugin } from './scripts/generate-sitemap.js';
+
+const pwaVersionPlugin = () => {
+  const version = `${Date.now().toString(36)}`;
+  let resolvedConfig;
+
+  return {
+    name: 'brandscope-pwa-version',
+    apply: 'build',
+    configResolved(config) {
+      resolvedConfig = config;
+    },
+    async closeBundle() {
+      const serviceWorkerPath = path.resolve(resolvedConfig.root, resolvedConfig.build.outDir, 'sw.js');
+      const serviceWorker = await readFile(serviceWorkerPath, 'utf8');
+      await writeFile(serviceWorkerPath, serviceWorker.replaceAll('__BUILD_VERSION__', version), 'utf8');
+    }
+  };
+};
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env };
@@ -17,7 +37,8 @@ export default defineConfig(({ mode }) => {
         siteUrl: env.SITE_URL || env.VITE_APP_URL || DEFAULT_SITE_URL,
         supabaseUrl: env.VITE_SUPABASE_URL,
         publishableKey: env.VITE_SUPABASE_PUBLISHABLE_KEY
-      })
+      }),
+      pwaVersionPlugin()
     ],
     build: {
       rollupOptions: {

@@ -10,17 +10,32 @@ export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retrySeconds, setRetrySeconds] = useState(0);
   const { addToast } = useToast();
+
+  useEffect(() => {
+    if (retrySeconds <= 0) return undefined;
+    const timer = window.setTimeout(() => {
+      setRetrySeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [retrySeconds]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading || retrySeconds > 0) return;
+    setError('');
     setLoading(true);
     try {
       await authService.resetPassword(email);
       setSent(true);
       addToast('Password reset link has been dispatched', 'success');
     } catch (err) {
-      addToast(err.message || 'Could not send reset link', 'error');
+      const message = err.message || 'Could not send reset link';
+      setError(message);
+      if (err.status === 429 || err.code === 'over_email_send_rate_limit') setRetrySeconds(60);
+      addToast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -53,6 +68,7 @@ export const ForgotPasswordPage = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
+              {error && <div className="auth-error"><AlertCircle size={16} /><span>{error}</span></div>}
               <div className="form-group">
                 <label className="form-label">Business Email Address</label>
                 <div style={{ position: 'relative' }}>
@@ -69,8 +85,8 @@ export const ForgotPasswordPage = () => {
                 </div>
               </div>
 
-              <button type="submit" disabled={loading} className="btn btn-primary btn-block">
-                {loading ? 'Sending link...' : 'Send Recovery Instructions'}
+              <button type="submit" disabled={loading || retrySeconds > 0} className="btn btn-primary btn-block">
+                {loading ? 'Sending link...' : retrySeconds > 0 ? `Try again in ${retrySeconds}s` : 'Send Recovery Instructions'}
               </button>
             </form>
           )}

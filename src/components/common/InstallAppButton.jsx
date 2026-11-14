@@ -33,9 +33,16 @@ export const InstallAppButton = ({ compact = false, className = '' }) => {
       setShowGuide(true);
       return;
     }
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === 'accepted') setInstallPrompt(null);
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+    } catch {
+      // A second mounted install control may hold an already-consumed event.
+      // Fall back to the browser-specific installation guide in that case.
+      setInstallPrompt(null);
+      setShowGuide(true);
+    }
   };
 
   return (

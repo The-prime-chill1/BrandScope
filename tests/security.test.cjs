@@ -119,6 +119,8 @@ describe('BRANDSCOPE production invariants', () => {
     assert.match(signup, /showConfirmPassword/);
     assert.match(recovery, /resetPassword/);
     assert.match(recovery, /SetPasswordPage/);
+    assert.match(recovery, /retrySeconds/);
+    assert.match(recovery, /Try again in/);
   });
 
   it('keeps Supabase email callbacks on the production website', () => {
@@ -184,7 +186,9 @@ describe('BRANDSCOPE production invariants', () => {
     const manifest = JSON.parse(read('public/site.webmanifest'));
     const html = read('index.html');
     const main = read('src/main.jsx');
+    const bootstrap = read('src/bootstrap.jsx');
     const serviceWorker = read('public/sw.js');
+    const viteConfig = read('vite.config.js');
 
     assert.match(manifest.name, /^BRANDSCOPE/);
     assert.equal(manifest.short_name, 'BRANDSCOPE');
@@ -195,8 +199,15 @@ describe('BRANDSCOPE production invariants', () => {
     assert.ok(fs.statSync(path.join(root, 'public', 'pwa-icon-192.png')).size > 0);
     assert.ok(fs.statSync(path.join(root, 'public', 'pwa-icon-512.png')).size > 0);
     assert.match(html, /site\.webmanifest/);
-    assert.match(main, /serviceWorker\.register\('\/sw\.js'\)/);
+    assert.match(main, /serviceWorker\.register\('\/sw\.js'/);
     assert.match(serviceWorker, /offline\.html/);
+    assert.match(serviceWorker, /brandscope-static-__BUILD_VERSION__/);
+    assert.match(serviceWorker, /fetch\(event\.request, \{ cache: 'no-store' \}\)/);
+    assert.doesNotMatch(serviceWorker, /STATIC_SHELL\s*=\s*\[[^\]]*\/index\.html/s);
+    assert.match(bootstrap, /vite:preloadError/);
+    assert.match(bootstrap, /brandscope_stale_build_recovery/);
+    assert.match(viteConfig, /brandscope-pwa-version/);
+    assert.match(viteConfig, /replaceAll\('__BUILD_VERSION__'/);
   });
 
   it('uses the accessible BRANDSCOPE dropdown instead of awkward native selects', () => {

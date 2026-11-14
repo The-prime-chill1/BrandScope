@@ -24,8 +24,32 @@ if ('requestIdleCallback' in window) {
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.warn('[BRANDSCOPE] App installation service could not start:', error);
-    });
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let refreshing = false;
+
+    if (hadController) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    }
+
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => {
+        if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          worker?.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              worker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+        return registration.update();
+      })
+      .catch((error) => {
+        console.warn('[BRANDSCOPE] App installation service could not start:', error);
+      });
   });
 }
