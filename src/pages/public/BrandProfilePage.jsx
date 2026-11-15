@@ -158,7 +158,7 @@ export const BrandProfilePage = () => {
   };
 
   return (
-    <div style={{ paddingBottom: 'var(--space-16)' }}>
+    <div className="brand-profile-page">
       <Seo
         title={`${brand.name} — ${brand.category}`}
         description={brand.shortDescription || `Discover ${brand.name} on BRANDSCOPE.`}
@@ -169,13 +169,12 @@ export const BrandProfilePage = () => {
       />
       {/* Brand Hero Cover */}
       <div
+        className="brand-profile-cover"
         style={{
-          height: '280px',
           backgroundColor: 'var(--color-navy-surface)',
           backgroundImage: brand.coverUrl ? `url(${brand.coverUrl})` : 'linear-gradient(135deg, #10243A 0%, #3157D5 55%, #1BC7D2 100%)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          position: 'relative'
+          backgroundPosition: 'center'
         }}
       >
         <div
@@ -190,51 +189,22 @@ export const BrandProfilePage = () => {
       </div>
 
       {/* Brand Profile Header & Details */}
-      <div className="container">
-        <div
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            borderRadius: 'var(--radius-xl)',
-            padding: 'var(--space-8)',
-            marginTop: '-64px',
-            position: 'relative',
-            zIndex: 10,
-            boxShadow: 'var(--shadow-lg)',
-            border: '1px solid var(--color-border)',
-            marginBottom: 'var(--space-8)'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '20px',
-              flexWrap: 'wrap'
-            }}
-          >
+      <div className="container brand-profile-container">
+        <section className="brand-profile-summary">
+          <div className="brand-profile-summary-main">
             {/* Left: Avatar & Identity */}
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div className="brand-profile-identity">
               {brand.logoUrl ? <img
                 src={brand.logoUrl}
                 alt={brand.name}
-                style={{
-                  width: '96px',
-                  height: '96px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '4px solid #FFFFFF',
-                  boxShadow: 'var(--shadow-md)',
-                  objectFit: 'cover',
-                  backgroundColor: '#FFFFFF',
-                  marginTop: '-32px'
-                }}
+                className="brand-profile-logo"
               /> : (
                 <div className="brand-profile-logo-fallback">{brand.name?.charAt(0)?.toUpperCase() || 'B'}</div>
               )}
 
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <h1 style={{ fontSize: '1.8rem', margin: 0 }}>{brand.name}</h1>
+              <div className="brand-profile-identity-copy">
+                <div className="brand-profile-title-row">
+                  <h1>{brand.name}</h1>
                   {brand.verificationStatus === 'verified' && <VerificationBadge size={18} />}
                   {brand.cacNumber && (
                     <span
@@ -257,17 +227,7 @@ export const BrandProfilePage = () => {
                   )}
                 </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    color: 'var(--color-text-secondary)',
-                    fontSize: '0.875rem',
-                    marginTop: '6px',
-                    flexWrap: 'wrap'
-                  }}
-                >
+                <div className="brand-profile-meta">
                   <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{brand.category}</span>
                   {brand.city && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
@@ -286,13 +246,14 @@ export const BrandProfilePage = () => {
                     Joined {new Date(brand.joinedDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
                 </div>
+              </div>
 
-                <p style={{ marginTop: '10px', maxWidth: '640px', fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>
-                  {brand.shortDescription}
-                </p>
+              <p className="brand-profile-description">
+                {brand.shortDescription}
+              </p>
 
-                {/* External Website & Socials */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {/* External Website & Socials */}
+              <div className="brand-profile-links">
                   {brand.website ? (
                     <a
                       href={brand.website}
@@ -339,19 +300,18 @@ export const BrandProfilePage = () => {
                       Instagram
                     </a>
                   )}
-                </div>
               </div>
             </div>
 
             {/* Right: Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="brand-profile-actions">
               {/* WhatsApp Instant Commercial Inquiry (ShopSharp Pattern) */}
               {hasWhatsApp && (
                 <a
                   href={createWhatsAppInquiry()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-sm"
+                  className="btn btn-sm brand-profile-whatsapp-action"
                   style={{
                     backgroundColor: '#25D366',
                     color: '#FFFFFF',
@@ -406,7 +366,7 @@ export const BrandProfilePage = () => {
               <button
                 type="button"
                 onClick={() => setReportOpen(true)}
-                className="btn btn-ghost btn-sm"
+                className="btn btn-ghost btn-sm brand-profile-report-action"
                 title="Report brand"
                 style={{ padding: '8px' }}
               >
@@ -416,17 +376,7 @@ export const BrandProfilePage = () => {
           </div>
 
           {/* Quick Metrics Bar */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '24px',
-              borderTop: '1px solid var(--color-divider)',
-              marginTop: 'var(--space-6)',
-              paddingTop: 'var(--space-4)',
-              fontSize: '0.9rem',
-              flexWrap: 'wrap'
-            }}
-          >
+          <div className="brand-profile-metrics">
             <div>
               <strong style={{ color: 'var(--color-navy)', fontSize: '1.1rem' }}>{products.length}</strong>{' '}
               <span style={{ color: 'var(--color-text-secondary)' }}>Commercial Offerings</span>
@@ -446,81 +396,51 @@ export const BrandProfilePage = () => {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Tab Switcher: Products vs Posts vs About */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', marginBottom: 'var(--space-6)', overflowX: 'auto' }}>
+        <div className="brand-profile-tabs" role="tablist" aria-label="Brand profile sections">
           <button
             type="button"
             onClick={() => setActiveTab('products')}
-            style={{
-              padding: '12px 20px',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === 'products' ? '2px solid var(--color-blue)' : '2px solid transparent',
-              color: activeTab === 'products' ? 'var(--color-blue)' : 'var(--color-text-secondary)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              whiteSpace: 'nowrap'
-            }}
+            className={`brand-profile-tab ${activeTab === 'products' ? 'is-active' : ''}`}
+            role="tab"
+            aria-selected={activeTab === 'products'}
           >
             <ShoppingBag size={16} />
-            <span>Products & Showcase ({products.length})</span>
+            <span className="brand-profile-tab-label--desktop">Products & Showcase ({products.length})</span>
+            <span className="brand-profile-tab-label--mobile">Products <b>{products.length}</b></span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('posts')}
-            style={{
-              padding: '12px 20px',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === 'posts' ? '2px solid var(--color-blue)' : '2px solid transparent',
-              color: activeTab === 'posts' ? 'var(--color-blue)' : 'var(--color-text-secondary)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              whiteSpace: 'nowrap'
-            }}
+            className={`brand-profile-tab ${activeTab === 'posts' ? 'is-active' : ''}`}
+            role="tab"
+            aria-selected={activeTab === 'posts'}
           >
             <FileText size={16} />
-            <span>Posts & Announcements ({posts.length})</span>
+            <span className="brand-profile-tab-label--desktop">Posts & Announcements ({posts.length})</span>
+            <span className="brand-profile-tab-label--mobile">Posts <b>{posts.length}</b></span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('about')}
-            style={{
-              padding: '12px 20px',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === 'about' ? '2px solid var(--color-blue)' : '2px solid transparent',
-              color: activeTab === 'about' ? 'var(--color-blue)' : 'var(--color-text-secondary)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              whiteSpace: 'nowrap'
-            }}
+            className={`brand-profile-tab ${activeTab === 'about' ? 'is-active' : ''}`}
+            role="tab"
+            aria-selected={activeTab === 'about'}
           >
             <Info size={16} />
-            <span>About & Credentials</span>
+            <span className="brand-profile-tab-label--desktop">About & Credentials</span>
+            <span className="brand-profile-tab-label--mobile">About</span>
           </button>
         </div>
 
         {/* Tab 1: Products & Digital Showcase (ShopSharp Instant Commerce Pattern) */}
         {activeTab === 'products' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="brand-profile-panel">
+            <div className="brand-profile-panel-heading">
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Commercial Catalog & Offerings</h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
@@ -529,7 +449,7 @@ export const BrandProfilePage = () => {
               </div>
 
               {products.length > 2 && (
-                <div style={{ position: 'relative', width: '260px' }}>
+                <div className="brand-profile-product-search">
                   <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                   <input
                     type="text"
@@ -645,7 +565,7 @@ export const BrandProfilePage = () => {
 
         {/* Tab 2: Posts & Announcements */}
         {activeTab === 'posts' && (
-          <div style={{ maxWidth: '720px' }}>
+          <div className="brand-profile-panel brand-profile-posts">
             {isOwner && <PostCreator onPostCreated={handlePostCreated} />}
 
             {posts.length === 0 ? (
@@ -668,9 +588,9 @@ export const BrandProfilePage = () => {
 
         {/* Tab 3: About & Credentials */}
         {activeTab === 'about' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', alignItems: 'start' }}>
+          <div className="brand-profile-panel brand-profile-about-grid">
             {/* Left: Bio & Company Description */}
-            <div className="card" style={{ padding: 'var(--space-8)' }}>
+            <div className="card brand-profile-about-card">
               <h3 style={{ marginBottom: 'var(--space-4)' }}>About {brand.name}</h3>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--color-text-primary)', whiteSpace: 'pre-line' }}>
                 {brand.fullDescription || brand.shortDescription}
@@ -678,7 +598,7 @@ export const BrandProfilePage = () => {
 
               <div style={{ marginTop: 'var(--space-8)', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-6)' }}>
                 <h4>Commercial Profile Overview</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: 'var(--space-4)' }}>
+                <div className="brand-profile-overview-grid">
                   <div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'block' }}>Industry</span>
                     <strong>{brand.category}</strong>
@@ -716,7 +636,7 @@ export const BrandProfilePage = () => {
             </div>
 
             {/* Right Sidebar: Trust & Contact Card */}
-            <div className="card" style={{ padding: 'var(--space-6)', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+            <div className="card brand-profile-trust-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <ShieldCheck size={20} color="#16A34A" />
                 <h4 style={{ margin: 0, fontSize: '1.05rem' }}>Commercial Trust Card</h4>
